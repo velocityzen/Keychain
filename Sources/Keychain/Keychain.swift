@@ -1,85 +1,141 @@
 import Foundation
 import Security
 
-@discardableResult
-public func set(
-    _ key: String, _ value: Bool, withAccess access: KeychainSwiftAccessOptions? = nil
-) async -> Result<Bool, KeychainError> {
+public func keychainSet(
+    _ key: String, _ value: Bool, withAccess access: KeychainAccessibilityValues? = nil
+) async -> Result<Void, KeychainError> {
     let bytes: [UInt8] = value ? [1] : [0]
     let data = Data(bytes)
 
-    return keychainSet(key, data, withAccess: access)
+    return await keychainSet(key, data, withAccess: access)
 }
 
-@discardableResult
-public func set(
-    _ key: String, _ value: String, withAccess access: KeychainSwiftAccessOptions? = nil
-) async -> Bool {
-    if let value = value.data(using: String.Encoding.utf8) {
-        return keychainSet(key, value, withAccess: access)
+public func keychainSet(
+    _ key: String, _ value: String, withAccess access: KeychainAccessibilityValues? = nil
+) async -> Result<Void, KeychainError> {
+    guard let value = value.data(using: String.Encoding.utf8) else {
+        return .failure(.unexpectedPasswordData)
     }
 
-    return false
+    return await keychainSet(key, value, withAccess: access)
 }
 
-@discardableResult
 public func keychainSet(
-    _ key: String, _ value: Data, withAccess access: KeychainSwiftAccessOptions? = nil
-) async -> Result<Bool, KeychainError> {
-    var query: [String: Any] = [
-        KeychainSwiftConstants.klass: kSecClassGenericPassword,
-        KeychainSwiftConstants.attrAccount: prefixedKey,
-        KeychainSwiftConstants.valueData: value,
-        KeychainSwiftConstants.accessible: accessible,
+    _ key: String, _ value: Data,
+    withAccess access: KeychainAccessibilityValues? = nil
+) async -> Result<Void, KeychainError> {
+    let query: [String: Any] = [
+        KeychainItemAttributeKeys.Class: KeychainClassValues.GenericPassword,
+        KeychainItemAttributeKeys.Accessible: access ?? KeychainAccessibilityValues.WhenUnlocked,
+
+        KeychainPasswordAttributeKeys.Account: key,
+        KeychainValueTypeKeys.Data: value,
     ]
 
-    let status = await asyncSecItemAdd(query as CFDictionary, nil)
+    let status = await keychainItemAdd(query as CFDictionary)
 
     if status == noErr {
-        return .success(true)
+        return .success(())
     }
 
     return .failure(KeychainError.error(status))
 }
 
-public func keychainGetData(_ key: String, asReference: Bool = false) async -> Result<
+public func keychainGetString(_ key: String) async -> Result<
+    String, KeychainError
+> {
+    return await keychainGet(key).flatMap {
+        guard let str = String(data: $0, encoding: .utf8) else {
+            return .failure(.notString)
+        }
+        return .success(str)
+    }
+}
+
+public func keychainGetBool(_ key: String) async -> Result<
+    Bool, KeychainError
+> {
+    return await keychainGet(key).flatMap { (data: Data) in
+        if let firstByte = data.first {
+            if firstByte == 0 {
+                return .success(false)
+            } else if firstByte == 1 {
+                return .success(true)
+            }
+        }
+
+        return .failure(.notBoolean)
+    }
+}
+
+public func keychainGet(_ key: String) async -> Result<
     Data, KeychainError
 > {
-    var query: [String: Any] = [
-        KeychainSwiftConstants.klass: kSecClassGenericPassword,
-        KeychainSwiftConstants.attrAccount: key,
-        KeychainSwiftConstants.matchLimit: kSecMatchLimitOne,
+    let query: [String: Any] = [
+        KeychainItemAttributeKeys.Class: KeychainClassValues.GenericPassword,
+        KeychainPasswordAttributeKeys.Account: key,
+
+        KeychainSearchKeys.MatchLimit: KeychainMatchLimitValues.One,
+        KeychainValueResultReturn.Data: kCFBooleanTrue!,
     ]
 
-    if asReference {
-        query[KeychainSwiftConstants.returnReference] = kCFBooleanTrue
-    } else {
-        query[KeychainSwiftConstants.returnData] = kCFBooleanTrue
+    let (status, data) = await keychainItemCopyMatching(query as CFDictionary)
+
+    if status == noErr {
+        guard let data else {
+            return .failure(KeychainError.notFound)
+        }
+
+        return .success(data)
+    }
+
+    return .failure(KeychainError.error(status))
+}
+
+struct SendableCFDictionary: @unchecked Sendable {
+    let value: CFDictionary
+
+    init(_ value: CFDictionary) {
+        self.value = value
     }
 }
 
-func asyncSecItemAdd(
-    attributes attrs: CFDictionary
+func keychainItemAdd(
+    _ attributes: CFDictionary
 ) async -> OSStatus {
-    Task.detached {
-        return SecItemAdd(attrs, nil)
+    let sendableAttrs = SendableCFDictionary(attributes)
+    let task = Task.detached { () -> OSStatus in
+        let status = SecItemAdd(sendableAttrs.value, nil)
+        return status
     }
+
+    return await task.value
 }
 
-func asyncSecItemDelete(
-    attributes attrs: CFDictionary
+func keychainItemDelete(
+    _ attributes: CFDictionary
 ) async -> OSStatus {
-    Task.detached {
-        return SecItemDelete(attrs)
+    let sendableAttrs = SendableCFDictionary(attributes)
+    let task = Task.detached { () -> OSStatus in
+        return SecItemDelete(sendableAttrs.value)
     }
+
+    return await task.value
 }
 
-func asyncSecItemCopyMatching(
-    attributes attrs: CFDictionary
-) async -> (OSStatus, CFTypeRef?) {
-    Task.detached {
+func keychainItemCopyMatching(
+    _ attributes: CFDictionary
+) async -> (OSStatus, Data?) {
+    let sendableAttrs = SendableCFDictionary(attributes)
+    let task = Task.detached { () -> (OSStatus, Data?) in
         var item: CFTypeRef?
-        let status = SecItemCopyMatching(attrs, &item)
-        return (status, item)
+        let result = SecItemCopyMatching(sendableAttrs.value, &item)
+        guard let data = item as? Data else {
+            return (result, nil)
+        }
+
+        return (result, data)
     }
+
+    return await task.value
 }

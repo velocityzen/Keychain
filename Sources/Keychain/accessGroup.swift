@@ -1,0 +1,36 @@
+import Foundation
+import Security
+
+public func getKeychainAccessGroups() -> Result<[String], KeychainError> {
+    var secCode: SecCode?
+    let status = SecCodeCopySelf([], &secCode)
+
+    guard status == errSecSuccess else {
+        return .failure(.error(status))
+    }
+
+    guard let code = secCode else {
+        return .failure(.noSecCode)
+    }
+
+    var secInfo: CFDictionary?
+    let infoStatus = SecCodeCopySigningInformation(
+        code as! SecStaticCode,
+        SecCSFlags(rawValue: kSecCSSigningInformation),
+        &secInfo
+    )
+
+    guard infoStatus == errSecSuccess else {
+        return .failure(.error(status))
+    }
+
+    guard
+        let info = secInfo as? [String: Any],
+        let entitlements = info[kSecCodeInfoEntitlementsDict as String] as? [String: Any],
+        let groups = entitlements["keychain-access-groups"] as? [String]
+    else {
+        return .failure(.noAccessGroups)
+    }
+
+    return .success(groups)
+}
