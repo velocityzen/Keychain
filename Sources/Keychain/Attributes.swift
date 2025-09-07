@@ -1,6 +1,6 @@
 import Security
 
-public struct KeychainItemAttributeKeys {
+public struct KeychainItemAttributeKeys: Sendable {
     /// An item class key used to construct a Keychain search dictionary.
     static let Class = kSecClass as String
     /// A key with a value that indicates access control list settings for the item.
@@ -43,21 +43,36 @@ public struct KeychainItemAttributeKeys {
 }
 
 /// values you use with the kSecClass key.
-public struct KeychainClassValues {
+public enum KeychainClassValues: String, Sendable {
     ///The value that indicates a generic password item.
-    static let GenericPassword = kSecClassGenericPassword as String
+    case genericPassword
     ///The value that indicates an Internet password item.
-    static let InternetPassword = kSecClassInternetPassword as String
+    case internetPassword
     /// The value that indicates a certificate item.
-    static let Certificate = kSecClassCertificate as String
+    case certificate
     ///The value that indicates a cryptographic key item.
-    static let Key = kSecClassKey as String
+    case key
     ///The value that indicates an identity item.
-    static let Identity = kSecClassIdentity as String
+    case identity
+
+    public var rawValue: String {
+        switch self {
+        case .genericPassword:
+            return kSecClassGenericPassword as String
+        case .internetPassword:
+            return kSecClassInternetPassword as String
+        case .certificate:
+            return kSecClassCertificate as String
+        case .key:
+            return kSecClassKey as String
+        case .identity:
+            return kSecClassIdentity as String
+        }
+    }
 }
 
 /// Item search matching keys
-public struct KeychainSearchKeys {
+public struct KeychainSearchKeys: Sendable {
     /// A key whose value indicates a policy with which a matching certificate or identity must verify.
     static let MatchPolicy = kSecMatchPolicy as String
     /// A key whose value indicates a list of items to search.
@@ -101,33 +116,62 @@ public struct KeychainSearchKeys {
 }
 
 /// Keys used to limit the number of results returned.
-public struct KeychainMatchLimitValues {
+public enum KeychainMatchLimitValues: String, Sendable {
     /// A key whose value indicates the match limit.
-    static let One = kSecMatchLimitOne as String
+    case one
     /// A key whose value indicates the match limit.
-    static let All = kSecMatchLimitAll as String
+    case all
+
+    public var rawValue: String {
+        switch self {
+        case .one:
+            return kSecMatchLimitOne as String
+        case .all:
+            return kSecMatchLimitAll as String
+        }
+    }
 }
 
 /// Values you use to indicate whether to allow UI authentication.
-public struct KeychainUIAuthenticationValues {
-    ///A value that indicates items requiring user authentication should be skipped.
-    static let Skip = kSecUseAuthenticationUISkip as String
+public enum KeychainUIAuthenticationValues: String, Sendable {
+    /// A key whose value is a Boolean indicating whether to allow UI authentication.
+    case skip
+
+    public var rawValue: String {
+        switch self {
+        case .skip:
+            return kSecUseAuthenticationUISkip as String
+        }
+    }
 }
 
 /// Keys you use to specify the type of results to return from a keychain item search or add operation.
-public struct KeychainValueResultReturn {
-    /// A key whose value is a Boolean that indicates whether or not to return item data.
-    static let Data = kSecReturnData as String
-    ///A key whose value is a Boolean indicating whether or not to return item attributes.
-    static let Attributes = kSecReturnAttributes as String
-    ///A key whose value is a Boolean indicating whether or not to return a reference to an item.
-    static let Ref = kSecReturnRef as String
-    ///A key whose value is a Boolean indicating whether or not to return a persistent reference to an item.
-    static let PersistentRef = kSecReturnPersistentRef as String
+public enum KeychainValueResultReturn: String, Sendable {
+    /// A key whose value is a Boolean indicating whether to return item data.
+    case data
+    /// A key whose value is a Boolean indicating whether to return item attributes.
+    case attributes
+    /// A key whose value is a Boolean indicating whether to return an item reference.
+    case ref
+    /// A key whose value is a Boolean indicating whether to return a persistent item reference.
+    case persistentRef
+
+    public var rawValue: String {
+        switch self {
+        case .data:
+            return kSecReturnData as String
+        case .attributes:
+            return kSecReturnAttributes as String
+        case .ref:
+            return kSecReturnRef as String
+        case .persistentRef:
+            return kSecReturnPersistentRef as String
+        }
+    }
 }
 
 /// Keys that appear in the result dictionary when you specify more than one search result key.
-public struct KeychainValueTypeKeys {
+public struct KeychainValueTypeKeys: Sendable {
     ///A key whose value is the item’s data.
     static let Data = kSecValueData as String
     /// A key whose value is a reference to the item.
@@ -136,7 +180,7 @@ public struct KeychainValueTypeKeys {
     static let PersistentRef = kSecValuePersistentRef as String
 }
 
-public struct KeychainPasswordAttributeKeys {
+public struct KeychainPasswordAttributeKeys: Sendable {
     /// A key whose value is a string indicating the item’s account name.
     static let Account = kSecAttrAccount as String
     /// A key whose value is a string indicating the item’s service.
@@ -157,7 +201,7 @@ public struct KeychainPasswordAttributeKeys {
     static let Path = kSecAttrPath as String
 }
 
-public struct KeychainCertificateAttributeKeys {
+public struct KeychainCertificateAttributeKeys: Sendable {
     /// A key whose value indicates the item’s subject name.
     static let Subject = kSecAttrSubject as String
     /// A key whose value indicates the item’s issuer.
@@ -174,7 +218,7 @@ public struct KeychainCertificateAttributeKeys {
     static let CertificateEncoding = kSecAttrCertificateEncoding as String
 }
 
-public struct KeychainCryptographicKeyAttributeKeys {
+public struct KeychainCryptographicKeyAttributeKeys: Sendable {
     /// A key whose value indicates the item’s cryptographic key class.
     static let KeyClass = kSecAttrKeyClass as String
     /// A key whose value indicates the item’s application label.
@@ -197,7 +241,7 @@ public struct KeychainCryptographicKeyAttributeKeys {
     static let TokenID = kSecAttrTokenID as String
 }
 
-public struct KeychainCryptographicKeyUsageAttributeKeys {
+public struct KeychainCryptographicKeyUsageAttributeKeys: Sendable {
     /// A key whose value indicates the item’s permanence.
     static let IsPermanent = kSecAttrIsPermanent as String
     /// A key whose value indicates the item’s sensitivity.
@@ -221,168 +265,338 @@ public struct KeychainCryptographicKeyUsageAttributeKeys {
 }
 
 /// Values you use with the kSecAttrProtocol attribute key.
-public struct KeychainProtocolValues {
+public enum KeychainProtocolValues: String, Sendable {
     /// FTP protocol.
-    static let FTP = kSecAttrProtocolFTP as String
+    case ftp
     /// A client side FTP account.
-    static let FTPAccount = kSecAttrProtocolFTPAccount as String
+    case ftpAccount
     /// HTTP protocol.
-    static let HTTP = kSecAttrProtocolHTTP as String
+    case http
     /// IRC protocol.
-    static let IRC = kSecAttrProtocolIRC as String
+    case irc
     /// NNTP protocol.
-    static let NNTP = kSecAttrProtocolNNTP as String
+    case nntp
     /// POP3 protocol.
-    static let POP3 = kSecAttrProtocolPOP3 as String
+    case pop3
     /// SMTP protocol.
-    static let SMTP = kSecAttrProtocolSMTP as String
+    case smtp
     /// SOCKS protocol.
-    static let SOCKS = kSecAttrProtocolSOCKS as String
+    case socks
     /// IMAP protocol.
-    static let IMAP = kSecAttrProtocolIMAP as String
+    case imap
     /// LDAP protocol.
-    static let LDAP = kSecAttrProtocolLDAP as String
+    case ldap
     /// AFP over AppleTalk.
-    static let AppleTalk = kSecAttrProtocolAppleTalk as String
+    case appleTalk
     /// AFP over TCP.
-    static let AFP = kSecAttrProtocolAFP as String
+    case afp
     /// Telnet protocol.
-    static let Telnet = kSecAttrProtocolTelnet as String
+    case telnet
     /// SSH protocol.
-    static let SSH = kSecAttrProtocolSSH as String
+    case ssh
     /// FTP over TLS/SSL.
-    static let FTPS = kSecAttrProtocolFTPS as String
+    case ftps
     /// HTTP over TLS/SSL.
-    static let HTTPS = kSecAttrProtocolHTTPS as String
+    case https
     /// HTTP proxy.
-    static let HTTPProxy = kSecAttrProtocolHTTPProxy as String
+    case httpProxy
     /// HTTPS proxy.
-    static let HTTPSProxy = kSecAttrProtocolHTTPSProxy as String
+    case httpsProxy
     /// FTP proxy.
-    static let FTPProxy = kSecAttrProtocolFTPProxy as String
+    case ftpProxy
     /// SMB protocol.
-    static let SMB = kSecAttrProtocolSMB as String
+    case smb
     /// RTSP protocol.
-    static let RTSP = kSecAttrProtocolRTSP as String
+    case rtsp
     /// RTSP proxy.
-    static let RTSPProxy = kSecAttrProtocolRTSPProxy as String
+    case rtspProxy
     /// DAAP protocol.
-    static let DAAP = kSecAttrProtocolDAAP as String
+    case daap
     /// Remote Apple Events.
-    static let EPPC = kSecAttrProtocolEPPC as String
+    case eppc
     /// IPP protocol.
-    static let IPP = kSecAttrProtocolIPP as String
+    case ipp
     /// NNTP over TLS/SSL.
-    static let NNTPS = kSecAttrProtocolNNTPS as String
+    case nntps
     /// LDAP over TLS/SSL.
-    static let LDAPS = kSecAttrProtocolLDAPS as String
+    case ldaps
     /// Telnet over TLS/SSL.
-    static let TelnetS = kSecAttrProtocolTelnetS as String
+    case telnetS
     /// IMAP over TLS/SSL.
-    static let IMAPS = kSecAttrProtocolIMAPS as String
+    case imaps
     /// IRC over TLS/SSL.
-    static let IRCS = kSecAttrProtocolIRCS as String
+    case ircs
     /// POP3 over TLS/SSL.
-    static let POP3S = kSecAttrProtocolPOP3S as String
+    case pop3s
+
+    public var rawValue: String {
+        switch self {
+        case .ftp:
+            return kSecAttrProtocolFTP as String
+        case .ftpAccount:
+            return kSecAttrProtocolFTPAccount as String
+        case .http:
+            return kSecAttrProtocolHTTP as String
+        case .irc:
+            return kSecAttrProtocolIRC as String
+        case .nntp:
+            return kSecAttrProtocolNNTP as String
+        case .pop3:
+            return kSecAttrProtocolPOP3 as String
+        case .smtp:
+            return kSecAttrProtocolSMTP as String
+        case .socks:
+            return kSecAttrProtocolSOCKS as String
+        case .imap:
+            return kSecAttrProtocolIMAP as String
+        case .ldap:
+            return kSecAttrProtocolLDAP as String
+        case .appleTalk:
+            return kSecAttrProtocolAppleTalk as String
+        case .afp:
+            return kSecAttrProtocolAFP as String
+        case .telnet:
+            return kSecAttrProtocolTelnet as String
+        case .ssh:
+            return kSecAttrProtocolSSH as String
+        case .ftps:
+            return kSecAttrProtocolFTPS as String
+        case .https:
+            return kSecAttrProtocolHTTPS as String
+        case .httpProxy:
+            return kSecAttrProtocolHTTPProxy as String
+        case .httpsProxy:
+            return kSecAttrProtocolHTTPSProxy as String
+        case .ftpProxy:
+            return kSecAttrProtocolFTPProxy as String
+        case .smb:
+            return kSecAttrProtocolSMB as String
+        case .rtsp:
+            return kSecAttrProtocolRTSP as String
+        case .rtspProxy:
+            return kSecAttrProtocolRTSPProxy as String
+        case .daap:
+            return kSecAttrProtocolDAAP as String
+        case .eppc:
+            return kSecAttrProtocolEPPC as String
+        case .ipp:
+            return kSecAttrProtocolIPP as String
+        case .nntps:
+            return kSecAttrProtocolNNTPS as String
+        case .ldaps:
+            return kSecAttrProtocolLDAPS as String
+        case .telnetS:
+            return kSecAttrProtocolTelnetS as String
+        case .imaps:
+            return kSecAttrProtocolIMAPS as String
+        case .ircs:
+            return kSecAttrProtocolIRCS as String
+        case .pop3s:
+            return kSecAttrProtocolPOP3S as String
+        }
+    }
 }
 
 /// Values you use with the kSecAttrAuthenticationType attribute key.
-public struct KeychainAuthenticationTypeValues {
+public enum KeychainAuthenticationTypeValues: String, Sendable {
     /// Windows NT LAN Manager authentication.
-    static let NTLM = kSecAttrAuthenticationTypeNTLM as String
+    case ntlm
     /// Microsoft Network default authentication.
-    static let MSN = kSecAttrAuthenticationTypeMSN as String
-    /// Distributed Password authentication.
-    static let DPA = kSecAttrAuthenticationTypeDPA as String
-    /// Remote Password authentication.
-    static let RPA = kSecAttrAuthenticationTypeRPA as String
+    case msn
+    /// Distributed Password Authentication.
+    case dpa
+    /// Remote Password Authentication.
+    case rpa
     /// HTTP Basic authentication.
-    static let HTTPBasic = kSecAttrAuthenticationTypeHTTPBasic as String
+    case httpBasic
     /// HTTP Digest Access authentication.
-    static let HTTPDigest = kSecAttrAuthenticationTypeHTTPDigest as String
+    case httpDigest
     /// HTML form based authentication.
-    static let HTMLForm = kSecAttrAuthenticationTypeHTMLForm as String
+    case htmlForm
     /// The default authentication type.
-    static let Default = kSecAttrAuthenticationTypeDefault as String
+    case `default`
+
+    public var rawValue: String {
+        switch self {
+        case .ntlm:
+            return kSecAttrAuthenticationTypeNTLM as String
+        case .msn:
+            return kSecAttrAuthenticationTypeMSN as String
+        case .dpa:
+            return kSecAttrAuthenticationTypeDPA as String
+        case .rpa:
+            return kSecAttrAuthenticationTypeRPA as String
+        case .httpBasic:
+            return kSecAttrAuthenticationTypeHTTPBasic as String
+        case .httpDigest:
+            return kSecAttrAuthenticationTypeHTTPDigest as String
+        case .htmlForm:
+            return kSecAttrAuthenticationTypeHTMLForm as String
+        case .default:
+            return kSecAttrAuthenticationTypeDefault as String
+        }
+    }
 }
 
 /// Values you use with the kSecAttrKeyClass attribute key.
-public struct KeychainKeyClassValues {
+public enum KeychainKeyClassValues: String, Sendable {
     /// A public key of a public-private pair.
-    static let Public = kSecAttrKeyClassPublic as String
+    case `public`
     /// A private key of a public-private pair.
-    static let Private = kSecAttrKeyClassPrivate as String
-    /// A private key used for symmetric-key encryption and decryption.
-    static let Symmetric = kSecAttrKeyClassSymmetric as String
+    case `private`
+    /// A symmetric key.
+    case symmetric
+
+    public var rawValue: String {
+        switch self {
+        case .public:
+            return kSecAttrKeyClassPublic as String
+        case .private:
+            return kSecAttrKeyClassPrivate as String
+        case .symmetric:
+            return kSecAttrKeyClassSymmetric as String
+        }
+    }
 }
 
 /// Values you use with the kSecAttrKeyType attribute key.
-public struct KeychainKeyTypeValues {
+public enum KeychainKeyTypeValues: String, Sendable {
     /// RSA algorithm.
-    static let RSA = kSecAttrKeyTypeRSA as String
+    case rsa
     /// DSA algorithm.
-    static let DSA = kSecAttrKeyTypeDSA as String
+    case dsa
     /// AES algorithm.
-    static let AES = kSecAttrKeyTypeAES as String
+    case aes
     /// DES algorithm.
-    static let DES = kSecAttrKeyTypeDES as String
-    /// 3DES algorithm.
-    static let TripleDES = kSecAttrKeyType3DES as String
+    case des
+    /// Triple DES algorithm.
+    case tripleDes
     /// RC4 algorithm.
-    static let RC4 = kSecAttrKeyTypeRC4 as String
+    case rc4
     /// RC2 algorithm.
-    static let RC2 = kSecAttrKeyTypeRC2 as String
+    case rc2
     /// CAST algorithm.
-    static let CAST = kSecAttrKeyTypeCAST as String
+    case cast
     /// Elliptic curve algorithm.
-    static let ECSECPrimeRandom = kSecAttrKeyTypeECSECPrimeRandom as String
+    case ecsecPrimeRandom
+
+    public var rawValue: String {
+        switch self {
+        case .rsa:
+            return kSecAttrKeyTypeRSA as String
+        case .dsa:
+            return kSecAttrKeyTypeDSA as String
+        case .aes:
+            return kSecAttrKeyTypeAES as String
+        case .des:
+            return kSecAttrKeyTypeDES as String
+        case .tripleDes:
+            return kSecAttrKeyType3DES as String
+        case .rc4:
+            return kSecAttrKeyTypeRC4 as String
+        case .rc2:
+            return kSecAttrKeyTypeRC2 as String
+        case .cast:
+            return kSecAttrKeyTypeCAST as String
+        case .ecsecPrimeRandom:
+            return kSecAttrKeyTypeECSECPrimeRandom as String
+        }
+    }
 }
 
 /// Values you use with the kSecAttrSynchronizable attribute key.
-public struct KeychainSynchronizabilityValues {
-    /// Specifies that both synchronizable and non-synchronizable results should be returned from a query.
-    static let SynchronizableAny = kSecAttrSynchronizableAny as String
+public enum KeychainSynchronizabilityValues: String, Sendable {
+    /// A key whose value indicates whether the item synchronizes through iCloud.
+    case synchronizableAny
+
+    public var rawValue: String {
+        switch self {
+        case .synchronizableAny:
+            return kSecAttrSynchronizableAny as String
+        }
+    }
 }
 
 /// Values you use with the kSecAttrTokenID attribute key.
-public struct KeychainTokenIdValues {
-    /// Specifies an item should be stored in the device’s Secure Enclave.
-    static let SecureEnclave = kSecAttrTokenIDSecureEnclave as String
+public enum KeychainTokenIdValues: String, Sendable {
+    /// A key whose value indicates whether the item synchronizes through iCloud.
+    case secureEnclave
+
+    public var rawValue: String {
+        switch self {
+        case .secureEnclave:
+            return kSecAttrTokenIDSecureEnclave as String
+        }
+    }
 }
 
 /// Values you use with the kSecAttrAccessible attribute key, listed from most to least restrictive.
-public struct KeychainAccessibilityValues {
+public enum KeychainAccessibilityValues: String, Sendable {
     /// The data in the keychain can only be accessed when the device is unlocked. Only available if a passcode is set on the device.
-    static let WhenPasscodeSetThisDeviceOnly =
-        kSecAttrAccessibleWhenPasscodeSetThisDeviceOnly as String
+    case whenPasscodeSetThisDeviceOnly
     /// The data in the keychain item can be accessed only while the device is unlocked by the user.
-    static let WhenUnlockedThisDeviceOnly =
-        kSecAttrAccessibleWhenUnlockedThisDeviceOnly as String
+    case whenUnlockedThisDeviceOnly
     /// The data in the keychain item can be accessed only while the device is unlocked by the user.
-    static let WhenUnlocked = kSecAttrAccessibleWhenUnlocked as String
+    case whenUnlocked
     /// The data in the keychain item cannot be accessed after a restart until the device has been unlocked once by the user.
-    static let AfterFirstUnlockThisDeviceOnly =
-        kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly as String
+    case afterFirstUnlockThisDeviceOnly
     /// The data in the keychain item cannot be accessed after a restart until the device has been unlocked once by the user.
-    static let AfterFirstUnlock = kSecAttrAccessibleAfterFirstUnlock as String
+    case afterFirstUnlock
+
+    public var rawValue: String {
+        switch self {
+        case .whenPasscodeSetThisDeviceOnly:
+            return kSecAttrAccessibleWhenPasscodeSetThisDeviceOnly as String
+        case .whenUnlockedThisDeviceOnly:
+            return kSecAttrAccessibleWhenUnlockedThisDeviceOnly as String
+        case .whenUnlocked:
+            return kSecAttrAccessibleWhenUnlocked as String
+        case .afterFirstUnlockThisDeviceOnly:
+            return kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly as String
+        case .afterFirstUnlock:
+            return kSecAttrAccessibleAfterFirstUnlock as String
+        }
+    }
 }
 
-///Values you use with the kSecAttrPRF attribute key to indicate the item’s pseudorandom function.
-public struct KeychainPseudorandomFunctionValues {
+///Values you use with the kSecAttrPRF attribute key to indicate the item's pseudorandom function.
+public enum KeychainPseudorandomFunctionValues: String, Sendable {
     /// Use the SHA1 algorithm.
-    static let SHA1 = kSecAttrPRFHmacAlgSHA1 as String
+    case sha1
     /// Use the SHA224 algorithm.
-    static let SHA224 = kSecAttrPRFHmacAlgSHA224 as String
+    case sha224
     /// Use the SHA256 algorithm.
-    static let SHA256 = kSecAttrPRFHmacAlgSHA256 as String
+    case sha256
     /// Use the SHA384 algorithm.
-    static let SHA384 = kSecAttrPRFHmacAlgSHA384 as String
+    case sha384
     /// Use the SHA512 algorithm.
-    static let SHA512 = kSecAttrPRFHmacAlgSHA512 as String
+    case sha512
+
+    public var rawValue: String {
+        switch self {
+        case .sha1:
+            return kSecAttrPRFHmacAlgSHA1 as String
+        case .sha224:
+            return kSecAttrPRFHmacAlgSHA224 as String
+        case .sha256:
+            return kSecAttrPRFHmacAlgSHA256 as String
+        case .sha384:
+            return kSecAttrPRFHmacAlgSHA384 as String
+        case .sha512:
+            return kSecAttrPRFHmacAlgSHA512 as String
+        }
+    }
 }
 
 /// Values you use with the kSecAttrAccessGroup attribute key.
-public struct KeychainAccessGroupValues {
-    /// The access group containing items provided by external tokens.
-    static let Token = kSecAttrAccessGroupToken as String
+public enum KeychainAccessGroupValues: String, Sendable {
+    /// no description
+    case token
+
+    public var rawValue: String {
+        switch self {
+        case .token:
+            return kSecAttrAccessGroupToken as String
+        }
+    }
 }

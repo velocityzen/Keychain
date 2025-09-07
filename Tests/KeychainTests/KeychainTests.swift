@@ -3,15 +3,39 @@ import Testing
 
 @testable import Keychain
 
-@Suite("Values") struct KeychainTests {
-    // deinit {
-    //     try? keychainDelete("key")
-    //     try? keychainDelete("string")
-    //     try? keychainDelete("bool")
-    // }
+enum TestValue {
+    case string(String)
+    case bool(Bool)
+    case data(Data)
+}
+typealias TestType = (TestValue, TestValue, KeychainError?)
 
-    @Test("string") func setAndGetString() async throws {
-        let setResult = await keychainSet("string", "value")
+@Suite("Values") struct KeychainValuesTests {
+    @Test(
+        "values",
+        arguments: [
+            (.string("string"), .string("string"), nil),
+            (.data("string".data(using: .utf8)!), .string("string"), nil),
+            (.bool(true), .bool(true), nil),
+            (.bool(false), .bool(false), nil),
+            (.string("true"), .bool(true), .notBoolean),
+            (.string("false"), .bool(false), .notBoolean),
+        ] as [TestType])
+
+    func setAndGetString(args: TestType) async throws {
+        let testKey = "test-" + UUID().uuidString
+        let (setValue, expectedValue, expectedError) = args
+        let attributes = withClass(.genericPassword, withAccessibility(.whenUnlocked))
+
+        let setResult =
+            switch setValue {
+            case .string(let value):
+                await keychainSet(testKey, value, attributes)
+            case .bool(let value):
+                await keychainSet(testKey, value, attributes)
+            case .data(let value):
+                await keychainSet(testKey, value, attributes)
+            }
 
         switch setResult {
         case .success:
@@ -20,66 +44,48 @@ import Testing
             throw error
         }
 
-        let getResult = await keychainGetString("string")
-        switch getResult {
-        case .success(let value):
-            #expect(value == "value")
-        case .failure(let error):
-            throw error
+        switch expectedValue {
+        case .string(let value):
+            let result = await keychainGetString(testKey, withClass(.genericPassword))
+            try expect(result, value, expectedError)
+
+        case .bool(let value):
+            let result = await keychainGetBool(testKey, withClass(.genericPassword))
+            try expect(result, value, expectedError)
+
+        case .data(let value):
+            let result = await keychainGetData(testKey, withClass(.genericPassword))
+            try expect(result, value, expectedError)
         }
+
+        await keychainDelete(testKey, withClass(.genericPassword))
     }
 
-    @Test("boolean:true/true") func setAndGetBoolTrue() async throws {
-        let setResult = await keychainSet("bool", true)
+}
 
-        switch setResult {
-        case .success:
-            break
-        case .failure(let error):
-            throw error
-        }
-
-        let getResult = await keychainGetBool("bool")
-        switch getResult {
+func expect<A: Equatable, B: Equatable>(
+    _ result: Result<A, KeychainError>, _ expectedValue: B,
+    _ expectedError: KeychainError?
+) throws {
+    if let expectedError {
+        switch result {
         case .success(let value):
-            #expect(value == true)
+            #expect(
+                value == nil,
+                "Expected error \(expectedError), but got success with value \(value)")
+
         case .failure(let error):
-            throw error
+            #expect(error == expectedError)
         }
+
+        return
     }
 
-    @Test("boolean:true/false") func setAndFailGetBoolTrue() async throws {
-        let setResult = await keychainSet("string bool", "true")
+    switch result {
+    case .success(let value):
+        #expect(value as? B == expectedValue)
 
-        switch setResult {
-        case .success:
-            break
-        case .failure(let error):
-            throw error
-        }
-
-        let getResult = await keychainGetBool("string bool")
-        #expect(throws: KeychainError.notBoolean) {
-            try getResult.get()
-        }
-    }
-
-    @Test("boolean:false") func setAndGetBoolFalse() async throws {
-        let setResult = await keychainSet("bool", false)
-
-        switch setResult {
-        case .success:
-            break
-        case .failure(let error):
-            throw error
-        }
-
-        let getResult = await keychainGetBool("bool")
-        switch getResult {
-        case .success(let value):
-            #expect(value == false)
-        case .failure(let error):
-            throw error
-        }
+    case .failure(let error):
+        throw error
     }
 }
