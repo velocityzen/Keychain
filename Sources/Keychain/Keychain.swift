@@ -159,12 +159,14 @@ func keychainItemAdd(
     _ attributes: KeychainItemAttributes
 ) async -> Result<Void, KeychainError> {
     let task = Task.detached { () -> Result<Void, KeychainError> in
-        let status = SecItemAdd(attributes as CFDictionary, nil)
-        if status == noErr {
-            return .success(())
-        }
+        sharedSecItemLock.withLock {
+            let status = SecItemAdd(attributes as CFDictionary, nil)
+            if status == noErr {
+                return .success(())
+            }
 
-        return .failure(KeychainError.error(status))
+            return .failure(KeychainError.error(status))
+        }
     }
 
     return await task.value
@@ -174,12 +176,14 @@ func keychainItemDelete(
     _ attributes: KeychainItemAttributes
 ) async -> Result<Void, KeychainError> {
     let task = Task.detached { () -> Result<Void, KeychainError> in
-        let status = SecItemDelete(attributes as CFDictionary)
-        if status == noErr || status == errSecItemNotFound {
-            return .success(())
-        }
+        sharedSecItemLock.withLock {
+            let status = SecItemDelete(attributes as CFDictionary)
+            if status == noErr || status == errSecItemNotFound {
+                return .success(())
+            }
 
-        return .failure(KeychainError.error(status))
+            return .failure(KeychainError.error(status))
+        }
     }
 
     return await task.value
@@ -189,19 +193,23 @@ func keychainItemCopyMatching(
     _ attributes: KeychainItemAttributes
 ) async -> Result<Data, KeychainError> {
     let task = Task.detached { () -> Result<Data, KeychainError> in
-        var data: CFTypeRef?
-        let status = SecItemCopyMatching(attributes as CFDictionary, &data)
+        sharedSecItemLock.withLock {
+            var data: CFTypeRef?
+            let status = SecItemCopyMatching(attributes as CFDictionary, &data)
 
-        if status == noErr {
-            guard let data = data as? Data else {
-                return .failure(KeychainError.notFound)
+            if status == noErr {
+                guard let data = data as? Data else {
+                    return .failure(KeychainError.notFound)
+                }
+
+                return .success(data)
             }
 
-            return .success(data)
+            return .failure(KeychainError.error(status))
         }
-
-        return .failure(KeychainError.error(status))
     }
 
     return await task.value
 }
+
+private let sharedSecItemLock = NSLock()
