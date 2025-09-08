@@ -2,44 +2,44 @@ import Security
 
 public struct KeychainItemAttributeKeys: Sendable {
     /// An item class key used to construct a Keychain search dictionary.
-    static let Class = kSecClass as String
+    public static let Class = kSecClass as String
     /// A key with a value that indicates access control list settings for the item.
-    static let Access = kSecAttrAccess as String
+    public static let Access = kSecAttrAccess as String
     /// A key with a value that’s an access control instance indicating access control settings for the item.
-    static let AccessControl = kSecAttrAccessControl as String
+    public static let AccessControl = kSecAttrAccessControl as String
     /// A key with a value that indicates when the keychain item is accessible.
-    static let Accessible = kSecAttrAccessible as String
+    public static let Accessible = kSecAttrAccessible as String
     /// A key with a value that’s a string indicating the access group the item is in.
-    static let AccessGroup = kSecAttrAccessGroup as String
+    public static let AccessGroup = kSecAttrAccessGroup as String
     /// A key with a value that’s a string indicating whether the item synchronizes through iCloud.
-    static let Synchronizable = kSecAttrSynchronizable as String
+    public static let Synchronizable = kSecAttrSynchronizable as String
     /// A key with a value that indicates the item’s creation date.
-    static let CreationDate = kSecAttrCreationDate as String
+    public static let CreationDate = kSecAttrCreationDate as String
     /// A key with a value that indicates the item’s most recent modification date.
-    static let ModificationDate = kSecAttrModificationDate as String
+    public static let ModificationDate = kSecAttrModificationDate as String
     /// A key with a value that’s a string indicating the item’s description.
-    static let Description = kSecAttrDescription as String
+    public static let Description = kSecAttrDescription as String
     /// A key with a value that’s a string indicating a comment associated with the item.
-    static let Comment = kSecAttrComment as String
+    public static let Comment = kSecAttrComment as String
     /// A key with a value that indicates the item’s creator.
-    static let Creator = kSecAttrCreator as String
+    public static let Creator = kSecAttrCreator as String
     /// A key with a value that indicates the item’s type.
-    static let ItemType = kSecAttrType as String
+    public static let ItemType = kSecAttrType as String
     /// A key with a value that’s a string indicating the item’s label.
-    static let Label = kSecAttrLabel as String
+    public static let Label = kSecAttrLabel as String
     /// A key with a value that’s a Boolean indicating the item’s visibility.
-    static let IsInvisible = kSecAttrIsInvisible as String
+    public static let IsInvisible = kSecAttrIsInvisible as String
     /// A key with a value that’s a Boolean indicating whether the item has a valid password.
-    static let IsNegative = kSecAttrIsNegative as String
+    public static let IsNegative = kSecAttrIsNegative as String
     /// A key with a value that’s a string that provides a sync view hint.
-    static let SyncViewHint = kSecAttrSyncViewHint as String
-    /// no
-    static let PersistantReference = kSecAttrPersistantReference as String
-    /// no
-    static let PersistentReference = kSecAttrPersistentReference as String
+    public static let SyncViewHint = kSecAttrSyncViewHint as String
+    /// Persistant Reference
+    public static let PersistantReference = kSecAttrPersistantReference as String
+    /// Persistent Reference
+    public static let PersistentReference = kSecAttrPersistentReference as String
     // /// A key with a value that indicates whether to store the data in a keychain available to anyone who uses the device.
     // @available(tvOS 16.0, *)
-    // static let UseUserIndependentKeychain = kSecUseUserIndependentKeychain as String
+    // public static let UseUserIndependentKeychain = kSecUseUserIndependentKeychain as String
 }
 
 /// values you use with the kSecClass key.
@@ -74,45 +74,45 @@ public enum KeychainClassValues: String, Sendable {
 /// Item search matching keys
 public struct KeychainSearchKeys: Sendable {
     /// A key whose value indicates a policy with which a matching certificate or identity must verify.
-    static let MatchPolicy = kSecMatchPolicy as String
+    public static let MatchPolicy = kSecMatchPolicy as String
     /// A key whose value indicates a list of items to search.
-    static let MatchItemList = kSecMatchItemList as String
+    public static let MatchItemList = kSecMatchItemList as String
     /// A key whose value indicates a list of items to search.
-    static let MatchSearchList = kSecMatchSearchList as String
+    public static let MatchSearchList = kSecMatchSearchList as String
     /// A key whose value is a string to match against a certificate or identity’s issuers.
-    static let MatchIssuers = kSecMatchIssuers as String
+    public static let MatchIssuers = kSecMatchIssuers as String
     /// A key whose value is a string to match against a certificate or identity’s email address.
-    static let MatchEmailAddressIfPresent = kSecMatchEmailAddressIfPresent as String
+    public static let MatchEmailAddressIfPresent = kSecMatchEmailAddressIfPresent as String
     /// A key whose value is a string to look for in a certificate or identity’s subject.
-    static let MatchSubjectContains = kSecMatchSubjectContains as String
+    public static let MatchSubjectContains = kSecMatchSubjectContains as String
     /// A key whose value is a string to match against the beginning of a certificate or identity’s subject.
-    static let MatchSubjectStartsWith = kSecMatchSubjectStartsWith as String
+    public static let MatchSubjectStartsWith = kSecMatchSubjectStartsWith as String
     /// A key whose value is a string to match against the end of a certificate or identity’s subject.
-    static let MatchSubjectEndsWith = kSecMatchSubjectEndsWith as String
+    public static let MatchSubjectEndsWith = kSecMatchSubjectEndsWith as String
     /// A key whose value is a string to exactly match a certificate or identity’s subject.
-    static let MatchSubjectWholeString = kSecMatchSubjectWholeString as String
+    public static let MatchSubjectWholeString = kSecMatchSubjectWholeString as String
     /// A key whose value is a Boolean indicating whether case-insensitive matching is performed.
-    static let MatchCaseInsensitive = kSecMatchCaseInsensitive as String
+    public static let MatchCaseInsensitive = kSecMatchCaseInsensitive as String
     /// A key whose value is a Boolean indicating whether diacritic-insensitive matching is performed.
-    static let MatchDiacriticInsensitive = kSecMatchDiacriticInsensitive as String
+    public static let MatchDiacriticInsensitive = kSecMatchDiacriticInsensitive as String
     /// A key whose value is a Boolean indicating whether width-insensitive matching is performed.
-    static let MatchWidthInsensitive = kSecMatchWidthInsensitive as String
+    public static let MatchWidthInsensitive = kSecMatchWidthInsensitive as String
     /// A key whose value is a Boolean indicating whether untrusted certificates should be returned.
-    static let MatchTrustedOnly = kSecMatchTrustedOnly as String
+    public static let MatchTrustedOnly = kSecMatchTrustedOnly as String
     /// A key whose value indicates the validity date.
-    static let MatchValidOnDate = kSecMatchValidOnDate as String
+    public static let MatchValidOnDate = kSecMatchValidOnDate as String
     /// A key whose value indicates the match limit.
-    static let MatchLimit = kSecMatchLimit as String
+    public static let MatchLimit = kSecMatchLimit as String
 
     /// A key whose value is a keychain to operate on.
-    static let UseKeychain = kSecUseKeychain as String
+    public static let UseKeychain = kSecUseKeychain as String
     /// A key whose value indicates whether the user is prompted for authentication.
-    static let UseAuthenticationUI = kSecUseAuthenticationUI as String
+    public static let UseAuthenticationUI = kSecUseAuthenticationUI as String
     /// A key whose value indicates a local authentication context to use.
-    static let UseAuthenticationContext = kSecUseAuthenticationContext as String
+    public static let UseAuthenticationContext = kSecUseAuthenticationContext as String
     /// A key whose value indicates whether to treat macOS keychain items like iOS keychain items.
     @available(macOS 10.15, *)
-    static let UseDataProtectionKeychain = kSecUseDataProtectionKeychain as String
+    public static let UseDataProtectionKeychain = kSecUseDataProtectionKeychain as String
 }
 
 /// Keys used to limit the number of results returned.
@@ -173,95 +173,95 @@ public enum KeychainValueResultReturn: String, Sendable {
 /// Keys that appear in the result dictionary when you specify more than one search result key.
 public struct KeychainValueTypeKeys: Sendable {
     ///A key whose value is the item’s data.
-    static let Data = kSecValueData as String
+    public static let Data = kSecValueData as String
     /// A key whose value is a reference to the item.
-    static let Ref = kSecValueRef as String
+    public static let Ref = kSecValueRef as String
     ///A key whose value is a persistent reference to the item.
-    static let PersistentRef = kSecValuePersistentRef as String
+    public static let PersistentRef = kSecValuePersistentRef as String
 }
 
 public struct KeychainPasswordAttributeKeys: Sendable {
     /// A key whose value is a string indicating the item’s account name.
-    static let Account = kSecAttrAccount as String
+    public static let Account = kSecAttrAccount as String
     /// A key whose value is a string indicating the item’s service.
-    static let Service = kSecAttrService as String
+    public static let Service = kSecAttrService as String
     /// A key whose value indicates the item’s user-defined attributes.
-    static let Generic = kSecAttrGeneric as String
+    public static let Generic = kSecAttrGeneric as String
     /// A key whose value is a string indicating the item’s security domain.
-    static let SecurityDomain = kSecAttrSecurityDomain as String
+    public static let SecurityDomain = kSecAttrSecurityDomain as String
     /// A key whose value is a string indicating the item’s server.
-    static let Server = kSecAttrServer as String
+    public static let Server = kSecAttrServer as String
     /// A key whose value indicates the item’s protocol.
-    static let ItemProtocol = kSecAttrProtocol as String
+    public static let ItemProtocol = kSecAttrProtocol as String
     /// A key whose value indicates the item’s authentication scheme.
-    static let AuthenticationType = kSecAttrAuthenticationType as String
+    public static let AuthenticationType = kSecAttrAuthenticationType as String
     /// A key whose value indicates the item’s port.
-    static let Port = kSecAttrPort as String
+    public static let Port = kSecAttrPort as String
     /// A key whose value is a string indicating the item’s path attribute.
-    static let Path = kSecAttrPath as String
+    public static let Path = kSecAttrPath as String
 }
 
 public struct KeychainCertificateAttributeKeys: Sendable {
     /// A key whose value indicates the item’s subject name.
-    static let Subject = kSecAttrSubject as String
+    public static let Subject = kSecAttrSubject as String
     /// A key whose value indicates the item’s issuer.
-    static let Issuer = kSecAttrIssuer as String
+    public static let Issuer = kSecAttrIssuer as String
     /// A key whose value indicates the item’s serial number.
-    static let SerialNumber = kSecAttrSerialNumber as String
+    public static let SerialNumber = kSecAttrSerialNumber as String
     /// A key whose value indicates the item’s subject key ID.
-    static let SubjectKeyID = kSecAttrSubjectKeyID as String
+    public static let SubjectKeyID = kSecAttrSubjectKeyID as String
     /// A key whose value indicates the item’s public key hash.
-    static let PublicKeyHash = kSecAttrPublicKeyHash as String
+    public static let PublicKeyHash = kSecAttrPublicKeyHash as String
     /// A key whose value indicates the item’s certificate type.
-    static let CertificateType = kSecAttrCertificateType as String
+    public static let CertificateType = kSecAttrCertificateType as String
     /// A key whose value indicates the item’s certificate encoding.
-    static let CertificateEncoding = kSecAttrCertificateEncoding as String
+    public static let CertificateEncoding = kSecAttrCertificateEncoding as String
 }
 
 public struct KeychainCryptographicKeyAttributeKeys: Sendable {
     /// A key whose value indicates the item’s cryptographic key class.
-    static let KeyClass = kSecAttrKeyClass as String
+    public static let KeyClass = kSecAttrKeyClass as String
     /// A key whose value indicates the item’s application label.
-    static let ApplicationLabel = kSecAttrApplicationLabel as String
+    public static let ApplicationLabel = kSecAttrApplicationLabel as String
     /// A key whose value indicates the item’s private tag.
-    static let ApplicationTag = kSecAttrApplicationTag as String
+    public static let ApplicationTag = kSecAttrApplicationTag as String
     /// A key whose value indicates the item’s algorithm.
-    static let KeyType = kSecAttrKeyType as String
+    public static let KeyType = kSecAttrKeyType as String
     /// A key whose value indicates the item’s pseudorandom function.
-    static let PRF = kSecAttrPRF as String
+    public static let PRF = kSecAttrPRF as String
     /// A key whose value indicates the salt to use for this item.
-    static let Salt = kSecAttrSalt as String
+    public static let Salt = kSecAttrSalt as String
     /// A key whose value indicates the number of rounds to run the pseudorandom function.
-    static let Rounds = kSecAttrRounds as String
+    public static let Rounds = kSecAttrRounds as String
     /// A key whose value indicates the number of bits in a cryptographic key.
-    static let KeySizeInBits = kSecAttrKeySizeInBits as String
+    public static let KeySizeInBits = kSecAttrKeySizeInBits as String
     /// A key whose value indicates the effective number of bits in a cryptographic key.
-    static let EffectiveKeySize = kSecAttrEffectiveKeySize as String
+    public static let EffectiveKeySize = kSecAttrEffectiveKeySize as String
     /// A key whose value indicates that a cryptographic key is in an external store.
-    static let TokenID = kSecAttrTokenID as String
+    public static let TokenID = kSecAttrTokenID as String
 }
 
 public struct KeychainCryptographicKeyUsageAttributeKeys: Sendable {
     /// A key whose value indicates the item’s permanence.
-    static let IsPermanent = kSecAttrIsPermanent as String
+    public static let IsPermanent = kSecAttrIsPermanent as String
     /// A key whose value indicates the item’s sensitivity.
-    static let IsSensitive = kSecAttrIsSensitive as String
+    public static let IsSensitive = kSecAttrIsSensitive as String
     /// A key whose value indicates the item’s extractability.
-    static let IsExtractable = kSecAttrIsExtractable as String
+    public static let IsExtractable = kSecAttrIsExtractable as String
     /// A key whose value is a Boolean that indicates whether the cryptographic key can be used for encryption.
-    static let CanEncrypt = kSecAttrCanEncrypt as String
+    public static let CanEncrypt = kSecAttrCanEncrypt as String
     /// A key whose value is a Boolean that indicates whether the cryptographic key can be used for decryption.
-    static let CanDecrypt = kSecAttrCanDecrypt as String
+    public static let CanDecrypt = kSecAttrCanDecrypt as String
     /// A key whose value is a Boolean that indicates whether the cryptographic key can be used for derivation.
-    static let CanDerive = kSecAttrCanDerive as String
+    public static let CanDerive = kSecAttrCanDerive as String
     /// A key whose value is a Boolean that indicates whether the cryptographic key can be used for digital signing.
-    static let CanSign = kSecAttrCanSign as String
+    public static let CanSign = kSecAttrCanSign as String
     /// A key whose value is a Boolean that indicates whether the cryptographic key can be used for signature verification.
-    static let CanVerify = kSecAttrCanVerify as String
+    public static let CanVerify = kSecAttrCanVerify as String
     /// A key whose value is a Boolean that indicates whether the cryptographic key can be used for wrapping.
-    static let CanWrap = kSecAttrCanWrap as String
+    public static let CanWrap = kSecAttrCanWrap as String
     /// A key whose value is a Boolean that indicates whether the cryptographic key can be used for unwrapping.
-    static let CanUnwrap = kSecAttrCanUnwrap as String
+    public static let CanUnwrap = kSecAttrCanUnwrap as String
 }
 
 /// Values you use with the kSecAttrProtocol attribute key.
