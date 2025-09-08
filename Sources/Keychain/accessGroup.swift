@@ -54,11 +54,11 @@ public func withCurrentAccessGroup() -> (_ attributes: KeychainItemAttributes) -
                 }
                 .map { accessGroup -> KeychainItemAttributes in
                     currentAccessGroup = accessGroup
-                    return withAccessGroup(accessGroup, attributes)
+                    return withAccessGroup(accessGroup)(attributes)
                 }
         }
 
-        return .success(withAccessGroup(currentAccessGroup, attributes))
+        return .success(withAccessGroup(currentAccessGroup)(attributes))
     }
 
     return with

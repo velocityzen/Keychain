@@ -26,16 +26,16 @@ typealias TestType = (TestValue, TestValue, KeychainError?)
 func setAndGetString(args: TestType) async throws {
     let testKey = "test-" + UUID().uuidString
     let (setValue, expectedValue, expectedError) = args
-    let attributes = withClass(.genericPassword, withAccessibility(.whenUnlocked))
+    let setAttributes = [:] |> withClass(.genericPassword) |> withAccessibility(.whenUnlocked)
 
     let setResult =
         switch setValue {
         case .string(let value):
-            await keychainSet(testKey, value, attributes)
+            await keychainSet(testKey, value, setAttributes)
         case .bool(let value):
-            await keychainSet(testKey, value, attributes)
+            await keychainSet(testKey, value, setAttributes)
         case .data(let value):
-            await keychainSet(testKey, value, attributes)
+            await keychainSet(testKey, value, setAttributes)
         }
 
     switch setResult {
@@ -45,21 +45,23 @@ func setAndGetString(args: TestType) async throws {
         throw error
     }
 
+    let getAttributes = [:] |> withClass(.genericPassword)
+
     switch expectedValue {
     case .string(let value):
-        let result = await keychainGetString(testKey, withClass(.genericPassword))
+        let result = await keychainGetString(testKey, getAttributes)
         try expect(result, value, expectedError)
 
     case .bool(let value):
-        let result = await keychainGetBool(testKey, withClass(.genericPassword))
+        let result = await keychainGetBool(testKey, getAttributes)
         try expect(result, value, expectedError)
 
     case .data(let value):
-        let result = await keychainGetData(testKey, withClass(.genericPassword))
+        let result = await keychainGetData(testKey, getAttributes)
         try expect(result, value, expectedError)
     }
 
-    await keychainDelete(testKey, withClass(.genericPassword))
+    await keychainDelete(testKey, getAttributes)
 }
 
 func expect<A: Equatable, B: Equatable>(

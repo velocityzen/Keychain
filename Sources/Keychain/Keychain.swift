@@ -2,48 +2,29 @@ import Foundation
 import Security
 
 public typealias KeychainItemAttributes = [String: Sendable]
+public typealias KeychainItemAttributesBuilder = (_ attributes: KeychainItemAttributes?) ->
+    KeychainItemAttributes
 
-public func withAccessibility(
-    _ accessible: KeychainAccessibilityValues, _ attributes: KeychainItemAttributes = [:]
-)
-    -> KeychainItemAttributes
+public func withAccessibility(_ accessible: KeychainAccessibilityValues)
+    -> KeychainItemAttributesBuilder
 {
-    return withKeychainItemAttributes(
-        attributes,
-        [
-            KeychainItemAttributeKeys.Accessible: accessible.rawValue
-        ])
-
+    return withKeychainItemAttributes([KeychainItemAttributeKeys.Accessible: accessible.rawValue])
 }
 
-public func withAccessGroup(_ group: String, _ attributes: KeychainItemAttributes = [:])
-    -> KeychainItemAttributes
-{
-    return withKeychainItemAttributes(
-        attributes,
-        [
-            KeychainItemAttributeKeys.AccessGroup: group
-        ])
-
+public func withAccessGroup(_ group: String) -> KeychainItemAttributesBuilder {
+    return withKeychainItemAttributes([KeychainItemAttributeKeys.AccessGroup: group])
 }
 
-public func withClass(
-    _ itemClass: KeychainClassValues, _ attributes: KeychainItemAttributes = [:]
-)
-    -> KeychainItemAttributes
-{
-    return withKeychainItemAttributes(
-        attributes,
-        [
-            KeychainItemAttributeKeys.Class: itemClass.rawValue
-        ])
-
+public func withClass(_ itemClass: KeychainClassValues) -> KeychainItemAttributesBuilder {
+    return withKeychainItemAttributes([KeychainItemAttributeKeys.Class: itemClass.rawValue])
 }
 
 public func withKeychainItemAttributes(
-    _ attributes: KeychainItemAttributes, _ add: KeychainItemAttributes
-) -> KeychainItemAttributes {
-    return attributes.merging(add) { attr, add in add }
+    _ add: KeychainItemAttributes,
+) -> KeychainItemAttributesBuilder {
+    return { (_ attributes: KeychainItemAttributes?) in
+        (attributes ?? [:]).merging(add) { attr, add in add }
+    }
 }
 
 public func keychainSet(
@@ -70,19 +51,16 @@ public func keychainSet(
     _ attributes: KeychainItemAttributes = [:]
 ) async -> Result<Void, KeychainError> {
     let query = withKeychainItemAttributes(
-        attributes,
         [
             KeychainPasswordAttributeKeys.Account: key,
             KeychainValueTypeKeys.Data: value,
-        ])
+        ])(attributes)
 
     return await keychainItemAdd(query)
 }
 
 public func keychainGetString(_ key: String, _ attributes: KeychainItemAttributes = [:]) async
-    -> Result<
-        String, KeychainError
-    >
+    -> Result<String, KeychainError>
 {
     return await keychainGetData(key, attributes).flatMap {
         guard let str = String(data: $0, encoding: .utf8) else {
@@ -93,9 +71,7 @@ public func keychainGetString(_ key: String, _ attributes: KeychainItemAttribute
 }
 
 public func keychainGetBool(_ key: String, _ attributes: KeychainItemAttributes = [:]) async
-    -> Result<
-        Bool, KeychainError
-    >
+    -> Result<Bool, KeychainError>
 {
     return await keychainGetData(key, attributes).flatMap { (data: Data) in
         if let firstByte = data.first {
@@ -111,42 +87,32 @@ public func keychainGetBool(_ key: String, _ attributes: KeychainItemAttributes 
 }
 
 public func keychainGetData(_ key: String, _ attributes: KeychainItemAttributes = [:]) async
-    -> Result<
-        Data, KeychainError
-    >
+    -> Result<Data, KeychainError>
 {
-    let query = withKeychainItemAttributes(
-        attributes,
-        [
-            KeychainPasswordAttributeKeys.Account: key,
-            KeychainSearchKeys.MatchLimit: KeychainMatchLimitValues.one.rawValue,
-            KeychainValueResultReturn.data.rawValue: 1,
-        ])
+    let query = withKeychainItemAttributes([
+        KeychainPasswordAttributeKeys.Account: key,
+        KeychainSearchKeys.MatchLimit: KeychainMatchLimitValues.one.rawValue,
+        KeychainValueResultReturn.data.rawValue: 1,
+    ])(attributes)
 
     return await keychainItemCopyMatching(query)
 }
 
 public func keychainGetDataAll(_ key: String, _ attributes: KeychainItemAttributes = [:]) async
-    -> Result<
-        Data, KeychainError
-    >
+    -> Result<Data, KeychainError>
 {
-    let query = withKeychainItemAttributes(
-        attributes,
-        [
-            KeychainPasswordAttributeKeys.Account: key,
-            KeychainSearchKeys.MatchLimit: KeychainMatchLimitValues.all.rawValue,
-            KeychainValueResultReturn.data.rawValue: 1,
-        ])
+    let query = withKeychainItemAttributes([
+        KeychainPasswordAttributeKeys.Account: key,
+        KeychainSearchKeys.MatchLimit: KeychainMatchLimitValues.all.rawValue,
+        KeychainValueResultReturn.data.rawValue: 1,
+    ])(attributes)
 
     return await keychainItemCopyMatching(query)
 }
 
 @discardableResult
 public func keychainDelete(_ key: String, _ attributes: KeychainItemAttributes = [:]) async
-    -> Result<
-        Void, KeychainError
-    >
+    -> Result<Void, KeychainError>
 {
     let query = attributes.merging([KeychainPasswordAttributeKeys.Account: key]) { attr, query in
         query
