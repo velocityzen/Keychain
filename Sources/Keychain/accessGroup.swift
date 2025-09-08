@@ -34,3 +34,32 @@ public func getKeychainAccessGroups() -> Result<[String], KeychainError> {
 
     return .success(groups)
 }
+
+public func withCurrentAccessGroup() -> (_ attributes: KeychainItemAttributes) -> Result<
+    KeychainItemAttributes, KeychainError
+> {
+    var currentAccessGroup: String?
+
+    func with(_ attributes: KeychainItemAttributes) -> Result<
+        KeychainItemAttributes, KeychainError
+    > {
+        guard let currentAccessGroup else {
+            return getKeychainAccessGroups()
+                .flatMap { groups -> Result<String, KeychainError> in
+                    guard let accessGroup = groups.first else {
+                        return .failure(.noAccessGroups)
+                    }
+
+                    return .success(accessGroup)
+                }
+                .map { accessGroup -> KeychainItemAttributes in
+                    currentAccessGroup = accessGroup
+                    return withAccessGroup(accessGroup, attributes)
+                }
+        }
+
+        return .success(withAccessGroup(currentAccessGroup, attributes))
+    }
+
+    return with
+}
