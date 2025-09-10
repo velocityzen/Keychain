@@ -1,10 +1,11 @@
 import Foundation
 
 public enum KeychainError: Error, Equatable, CustomStringConvertible {
+    case duplicateItem
     case notFound
     case notString
     case notBoolean
-    case unexpectedPasswordData
+    case unexpectedValueData
 
     case noSecCode
     case noAccessGroups
@@ -12,14 +13,16 @@ public enum KeychainError: Error, Equatable, CustomStringConvertible {
 
     public var description: String {
         switch self {
+        case .duplicateItem:
+            return "Keychain item already exists"
         case .notFound:
             return "Keychain item not found"
         case .notString:
             return "Keychain item is not a string"
         case .notBoolean:
             return "Keychain item is not a boolean"
-        case .unexpectedPasswordData:
-            return "Unexpected password data"
+        case .unexpectedValueData:
+            return "Unexpected value data"
         case .noSecCode:
             return "No SecCode"
         case .noAccessGroups:

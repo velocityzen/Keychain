@@ -40,7 +40,7 @@ public func keychainSet(
     _ key: String, _ value: String, _ attributes: KeychainItemAttributes = [:]
 ) async -> Result<Void, KeychainError> {
     guard let value = value.data(using: String.Encoding.utf8) else {
-        return .failure(.unexpectedPasswordData)
+        return .failure(.unexpectedValueData)
     }
 
     return await keychainSet(key, value, attributes)
@@ -57,6 +57,36 @@ public func keychainSet(
         ])(attributes)
 
     return await keychainItemAdd(query)
+}
+
+public func keychainUpdateValue(
+    _ key: String, _ value: Bool,
+    _ attributes: KeychainItemAttributes = [:]
+) async -> Result<Void, KeychainError> {
+    let bytes: [UInt8] = value ? [1] : [0]
+    let value = Data(bytes)
+
+    return await keychainUpdateValue(key, value, attributes)
+}
+
+public func keychainUpdateValue(
+    _ key: String, _ value: String,
+    _ attributes: KeychainItemAttributes = [:]
+) async -> Result<Void, KeychainError> {
+    guard let value = value.data(using: String.Encoding.utf8) else {
+        return .failure(.unexpectedValueData)
+    }
+
+    return await keychainUpdateValue(key, value, attributes)
+}
+
+public func keychainUpdateValue(
+    _ key: String, _ value: Data,
+    _ attributes: KeychainItemAttributes = [:]
+) async -> Result<Void, KeychainError> {
+    let query = withKeychainItemAttributes([KeychainPasswordAttributeKeys.Account: key])(attributes)
+
+    return await keychainItemUpdate(query, [KeychainValueTypeKeys.Data: value])
 }
 
 public func keychainGetString(_ key: String, _ attributes: KeychainItemAttributes = [:]) async
@@ -127,11 +157,41 @@ func keychainItemAdd(
     let task = Task.detached { () -> Result<Void, KeychainError> in
         sharedSecItemLock.withLock {
             let status = SecItemAdd(attributes as CFDictionary, nil)
-            if status == noErr {
-                return .success(())
-            }
 
-            return .failure(KeychainError.error(status))
+            switch status {
+            case noErr:
+                return .success(())
+
+            case errSecDuplicateItem:
+                return .failure(KeychainError.duplicateItem)
+
+            default:
+                return .failure(KeychainError.error(status))
+            }
+        }
+    }
+
+    return await task.value
+}
+
+func keychainItemUpdate(
+    _ query: KeychainItemAttributes,
+    _ update: KeychainItemAttributes
+) async -> Result<Void, KeychainError> {
+    let task = Task.detached { () -> Result<Void, KeychainError> in
+        sharedSecItemLock.withLock {
+            let status = SecItemUpdate(query as CFDictionary, update as CFDictionary)
+
+            switch status {
+            case noErr:
+                return .success(())
+
+            case errSecItemNotFound:
+                return .failure(KeychainError.notFound)
+
+            default:
+                return .failure(KeychainError.error(status))
+            }
         }
     }
 
