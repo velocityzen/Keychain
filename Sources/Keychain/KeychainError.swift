@@ -4,6 +4,7 @@ public enum KeychainError: Error, Equatable, CustomStringConvertible {
     case duplicateItem
     case notFound
     case notString
+    case notUUID
     case notBoolean
     case unexpectedValueData
 
@@ -19,6 +20,8 @@ public enum KeychainError: Error, Equatable, CustomStringConvertible {
             return "Keychain item not found"
         case .notString:
             return "Keychain item is not a string"
+        case .notUUID:
+            return "Keychain item is not a UUID"
         case .notBoolean:
             return "Keychain item is not a boolean"
         case .unexpectedValueData:

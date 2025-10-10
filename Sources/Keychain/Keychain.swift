@@ -47,6 +47,12 @@ public func keychainSet(
 }
 
 public func keychainSet(
+    _ key: String, _ value: UUID, _ attributes: KeychainItemAttributes = [:]
+) async -> Result<Void, KeychainError> {
+    return await keychainSet(key, value.uuidString, attributes)
+}
+
+public func keychainSet(
     _ key: String, _ value: Data,
     _ attributes: KeychainItemAttributes = [:]
 ) async -> Result<Void, KeychainError> {
@@ -97,6 +103,17 @@ public func keychainGetString(_ key: String, _ attributes: KeychainItemAttribute
             return .failure(.notString)
         }
         return .success(str)
+    }
+}
+
+public func keychainGetUUID(_ key: String, _ attributes: KeychainItemAttributes = [:]) async
+    -> Result<UUID, KeychainError>
+{
+    return await keychainGetString(key, attributes).flatMap {
+        guard let uuid = UUID(uuidString: $0) else {
+            return .failure(.notUUID)
+        }
+        return .success(uuid)
     }
 }
 
