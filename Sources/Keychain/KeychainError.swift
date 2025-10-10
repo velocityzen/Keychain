@@ -1,6 +1,6 @@
 import Foundation
 
-public enum KeychainError: Error, Equatable, CustomStringConvertible {
+public enum KeychainError: Error, Equatable, CustomStringConvertible, Codable {
     case duplicateItem
     case notFound
     case notString
