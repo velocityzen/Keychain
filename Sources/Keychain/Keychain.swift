@@ -87,11 +87,17 @@ public func keychainUpdateValue(
 }
 
 public func keychainUpdateValue(
+    _ key: String, _ value: UUID,
+    _ attributes: KeychainItemAttributes = [:]
+) async -> Result<Void, KeychainError> {
+    return await keychainUpdateValue(key, value.uuidString, attributes)
+}
+
+public func keychainUpdateValue(
     _ key: String, _ value: Data,
     _ attributes: KeychainItemAttributes = [:]
 ) async -> Result<Void, KeychainError> {
     let query = withKeychainItemAttributes([KeychainPasswordAttributeKeys.Account: key])(attributes)
-
     return await keychainItemUpdate(query, [KeychainValueTypeKeys.Data: value])
 }
 
@@ -161,10 +167,7 @@ public func keychainGetDataAll(_ key: String, _ attributes: KeychainItemAttribut
 public func keychainDelete(_ key: String, _ attributes: KeychainItemAttributes = [:]) async
     -> Result<Void, KeychainError>
 {
-    let query = attributes.merging([KeychainPasswordAttributeKeys.Account: key]) { attr, query in
-        query
-    }
-
+    let query = withKeychainItemAttributes([KeychainPasswordAttributeKeys.Account: key])(attributes)
     return await keychainItemDelete(query)
 }
 
