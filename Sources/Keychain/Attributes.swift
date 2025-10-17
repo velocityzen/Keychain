@@ -4,42 +4,45 @@ public struct KeychainItemAttributeKeys: Sendable {
     /// An item class key used to construct a Keychain search dictionary.
     public static let Class = kSecClass as String
     /// A key with a value that indicates access control list settings for the item.
+    @available(macOS 10.7, *)
     public static let Access = kSecAttrAccess as String
-    /// A key with a value that’s an access control instance indicating access control settings for the item.
+    /// A key with a value that's an access control instance indicating access control settings for the item.
     public static let AccessControl = kSecAttrAccessControl as String
     /// A key with a value that indicates when the keychain item is accessible.
     public static let Accessible = kSecAttrAccessible as String
-    /// A key with a value that’s a string indicating the access group the item is in.
+    /// A key with a value that's a string indicating the access group the item is in.
     public static let AccessGroup = kSecAttrAccessGroup as String
-    /// A key with a value that’s a string indicating whether the item synchronizes through iCloud.
+    /// A key with a value that's a string indicating whether the item synchronizes through iCloud.
     public static let Synchronizable = kSecAttrSynchronizable as String
-    /// A key with a value that indicates the item’s creation date.
+    /// A key with a value that indicates the item's creation date.
     public static let CreationDate = kSecAttrCreationDate as String
-    /// A key with a value that indicates the item’s most recent modification date.
+    /// A key with a value that indicates the item's most recent modification date.
     public static let ModificationDate = kSecAttrModificationDate as String
-    /// A key with a value that’s a string indicating the item’s description.
+    /// A key with a value that's a string indicating the item's description.
     public static let Description = kSecAttrDescription as String
-    /// A key with a value that’s a string indicating a comment associated with the item.
+    /// A key with a value that's a string indicating a comment associated with the item.
     public static let Comment = kSecAttrComment as String
-    /// A key with a value that indicates the item’s creator.
+    /// A key with a value that indicates the item's creator.
     public static let Creator = kSecAttrCreator as String
-    /// A key with a value that indicates the item’s type.
+    /// A key with a value that indicates the item's type.
     public static let ItemType = kSecAttrType as String
-    /// A key with a value that’s a string indicating the item’s label.
+    /// A key with a value that's a string indicating the item's label.
     public static let Label = kSecAttrLabel as String
-    /// A key with a value that’s a Boolean indicating the item’s visibility.
+    /// A key with a value that's a Boolean indicating the item's visibility.
     public static let IsInvisible = kSecAttrIsInvisible as String
-    /// A key with a value that’s a Boolean indicating whether the item has a valid password.
+    /// A key with a value that's a Boolean indicating whether the item has a valid password.
     public static let IsNegative = kSecAttrIsNegative as String
-    /// A key with a value that’s a string that provides a sync view hint.
+    /// A key with a value that's a string that provides a sync view hint.
     public static let SyncViewHint = kSecAttrSyncViewHint as String
     /// Persistant Reference
     public static let PersistantReference = kSecAttrPersistantReference as String
     /// Persistent Reference
     public static let PersistentReference = kSecAttrPersistentReference as String
-    // /// A key with a value that indicates whether to store the data in a keychain available to anyone who uses the device.
-    // @available(tvOS 16.0, *)
-    // public static let UseUserIndependentKeychain = kSecUseUserIndependentKeychain as String
+    #if os(tvOS)
+        /// A key with a value that indicates whether to store the data in a keychain available to anyone who uses the device.
+        @available(tvOS 16.0, *)
+        public static let UseUserIndependentKeychain = kSecUseUserIndependentKeychain as String
+    #endif
 }
 
 /// values you use with the kSecClass key.
@@ -86,16 +89,21 @@ public struct KeychainSearchKeys: Sendable {
     /// A key whose value is a string to look for in a certificate or identity’s subject.
     public static let MatchSubjectContains = kSecMatchSubjectContains as String
     /// A key whose value is a string to match against the beginning of a certificate or identity’s subject.
+    @available(macOS 10.7, *)
     public static let MatchSubjectStartsWith = kSecMatchSubjectStartsWith as String
     /// A key whose value is a string to match against the end of a certificate or identity’s subject.
+    @available(macOS 10.7, *)
     public static let MatchSubjectEndsWith = kSecMatchSubjectEndsWith as String
     /// A key whose value is a string to exactly match a certificate or identity’s subject.
+    @available(macOS 10.7, *)
     public static let MatchSubjectWholeString = kSecMatchSubjectWholeString as String
     /// A key whose value is a Boolean indicating whether case-insensitive matching is performed.
     public static let MatchCaseInsensitive = kSecMatchCaseInsensitive as String
     /// A key whose value is a Boolean indicating whether diacritic-insensitive matching is performed.
+    @available(macOS 10.7, *)
     public static let MatchDiacriticInsensitive = kSecMatchDiacriticInsensitive as String
     /// A key whose value is a Boolean indicating whether width-insensitive matching is performed.
+    @available(macOS 10.7, *)
     public static let MatchWidthInsensitive = kSecMatchWidthInsensitive as String
     /// A key whose value is a Boolean indicating whether untrusted certificates should be returned.
     public static let MatchTrustedOnly = kSecMatchTrustedOnly as String
@@ -105,6 +113,7 @@ public struct KeychainSearchKeys: Sendable {
     public static let MatchLimit = kSecMatchLimit as String
 
     /// A key whose value is a keychain to operate on.
+    @available(macOS 10.7, *)
     public static let UseKeychain = kSecUseKeychain as String
     /// A key whose value indicates whether the user is prompted for authentication.
     public static let UseAuthenticationUI = kSecUseAuthenticationUI as String
@@ -228,10 +237,13 @@ public struct KeychainCryptographicKeyAttributeKeys: Sendable {
     /// A key whose value indicates the item’s algorithm.
     public static let KeyType = kSecAttrKeyType as String
     /// A key whose value indicates the item’s pseudorandom function.
+    @available(macOS 10.7, *)
     public static let PRF = kSecAttrPRF as String
     /// A key whose value indicates the salt to use for this item.
+    @available(macOS 10.7, *)
     public static let Salt = kSecAttrSalt as String
     /// A key whose value indicates the number of rounds to run the pseudorandom function.
+    @available(macOS 10.7, *)
     public static let Rounds = kSecAttrRounds as String
     /// A key whose value indicates the number of bits in a cryptographic key.
     public static let KeySizeInBits = kSecAttrKeySizeInBits as String
