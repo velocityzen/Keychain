@@ -3,9 +3,6 @@ import Security
 public struct KeychainItemAttributeKeys: Sendable {
     /// An item class key used to construct a Keychain search dictionary.
     public static let Class = kSecClass as String
-    /// A key with a value that indicates access control list settings for the item.
-    @available(macOS 10.7, *)
-    public static let Access = kSecAttrAccess as String
     /// A key with a value that's an access control instance indicating access control settings for the item.
     public static let AccessControl = kSecAttrAccessControl as String
     /// A key with a value that indicates when the keychain item is accessible.
@@ -38,6 +35,12 @@ public struct KeychainItemAttributeKeys: Sendable {
     public static let PersistantReference = kSecAttrPersistantReference as String
     /// Persistent Reference
     public static let PersistentReference = kSecAttrPersistentReference as String
+
+    #if os(macOS)
+        /// A key with a value that indicates access control list settings for the item.
+        public static let Access = kSecAttrAccess as String
+    #endif
+
     #if os(tvOS)
         /// A key with a value that indicates whether to store the data in a keychain available to anyone who uses the device.
         @available(tvOS 16.0, *)
@@ -88,40 +91,35 @@ public struct KeychainSearchKeys: Sendable {
     public static let MatchEmailAddressIfPresent = kSecMatchEmailAddressIfPresent as String
     /// A key whose value is a string to look for in a certificate or identity’s subject.
     public static let MatchSubjectContains = kSecMatchSubjectContains as String
-    /// A key whose value is a string to match against the beginning of a certificate or identity’s subject.
-    @available(macOS 10.7, *)
-    public static let MatchSubjectStartsWith = kSecMatchSubjectStartsWith as String
-    /// A key whose value is a string to match against the end of a certificate or identity’s subject.
-    @available(macOS 10.7, *)
-    public static let MatchSubjectEndsWith = kSecMatchSubjectEndsWith as String
-    /// A key whose value is a string to exactly match a certificate or identity’s subject.
-    @available(macOS 10.7, *)
-    public static let MatchSubjectWholeString = kSecMatchSubjectWholeString as String
     /// A key whose value is a Boolean indicating whether case-insensitive matching is performed.
     public static let MatchCaseInsensitive = kSecMatchCaseInsensitive as String
-    /// A key whose value is a Boolean indicating whether diacritic-insensitive matching is performed.
-    @available(macOS 10.7, *)
-    public static let MatchDiacriticInsensitive = kSecMatchDiacriticInsensitive as String
-    /// A key whose value is a Boolean indicating whether width-insensitive matching is performed.
-    @available(macOS 10.7, *)
-    public static let MatchWidthInsensitive = kSecMatchWidthInsensitive as String
     /// A key whose value is a Boolean indicating whether untrusted certificates should be returned.
     public static let MatchTrustedOnly = kSecMatchTrustedOnly as String
     /// A key whose value indicates the validity date.
     public static let MatchValidOnDate = kSecMatchValidOnDate as String
     /// A key whose value indicates the match limit.
     public static let MatchLimit = kSecMatchLimit as String
-
-    /// A key whose value is a keychain to operate on.
-    @available(macOS 10.7, *)
-    public static let UseKeychain = kSecUseKeychain as String
     /// A key whose value indicates whether the user is prompted for authentication.
     public static let UseAuthenticationUI = kSecUseAuthenticationUI as String
     /// A key whose value indicates a local authentication context to use.
     public static let UseAuthenticationContext = kSecUseAuthenticationContext as String
-    /// A key whose value indicates whether to treat macOS keychain items like iOS keychain items.
-    @available(macOS 10.15, *)
-    public static let UseDataProtectionKeychain = kSecUseDataProtectionKeychain as String
+
+    #if os(macOS)
+        /// A key whose value is a string to match against the beginning of a certificate or identity’s subject.
+        public static let MatchSubjectStartsWith = kSecMatchSubjectStartsWith as String
+        /// A key whose value is a string to match against the end of a certificate or identity’s subject.
+        public static let MatchSubjectEndsWith = kSecMatchSubjectEndsWith as String
+        /// A key whose value is a string to exactly match a certificate or identity’s subject.
+        public static let MatchSubjectWholeString = kSecMatchSubjectWholeString as String
+        /// A key whose value is a Boolean indicating whether diacritic-insensitive matching is performed.
+        public static let MatchDiacriticInsensitive = kSecMatchDiacriticInsensitive as String
+        /// A key whose value is a Boolean indicating whether width-insensitive matching is performed.
+        public static let MatchWidthInsensitive = kSecMatchWidthInsensitive as String
+        /// A key whose value is a keychain to operate on.
+        public static let UseKeychain = kSecUseKeychain as String
+        /// A key whose value indicates whether to treat macOS keychain items like iOS keychain items.
+        public static let UseDataProtectionKeychain = kSecUseDataProtectionKeychain as String
+    #endif
 }
 
 /// Keys used to limit the number of results returned.
@@ -236,21 +234,21 @@ public struct KeychainCryptographicKeyAttributeKeys: Sendable {
     public static let ApplicationTag = kSecAttrApplicationTag as String
     /// A key whose value indicates the item’s algorithm.
     public static let KeyType = kSecAttrKeyType as String
-    /// A key whose value indicates the item’s pseudorandom function.
-    @available(macOS 10.7, *)
-    public static let PRF = kSecAttrPRF as String
-    /// A key whose value indicates the salt to use for this item.
-    @available(macOS 10.7, *)
-    public static let Salt = kSecAttrSalt as String
-    /// A key whose value indicates the number of rounds to run the pseudorandom function.
-    @available(macOS 10.7, *)
-    public static let Rounds = kSecAttrRounds as String
     /// A key whose value indicates the number of bits in a cryptographic key.
     public static let KeySizeInBits = kSecAttrKeySizeInBits as String
     /// A key whose value indicates the effective number of bits in a cryptographic key.
     public static let EffectiveKeySize = kSecAttrEffectiveKeySize as String
     /// A key whose value indicates that a cryptographic key is in an external store.
     public static let TokenID = kSecAttrTokenID as String
+
+    #if os(macOS)
+        /// A key whose value indicates the item’s pseudorandom function.
+        public static let PRF = kSecAttrPRF as String
+        /// A key whose value indicates the salt to use for this item.
+        public static let Salt = kSecAttrSalt as String
+        /// A key whose value indicates the number of rounds to run the pseudorandom function.
+        public static let Rounds = kSecAttrRounds as String
+    #endif
 }
 
 public struct KeychainCryptographicKeyUsageAttributeKeys: Sendable {
@@ -475,20 +473,6 @@ public enum KeychainKeyClassValues: String, Sendable {
 public enum KeychainKeyTypeValues: String, Sendable {
     /// RSA algorithm.
     case rsa
-    /// DSA algorithm.
-    case dsa
-    /// AES algorithm.
-    case aes
-    /// DES algorithm.
-    case des
-    /// Triple DES algorithm.
-    case tripleDes
-    /// RC4 algorithm.
-    case rc4
-    /// RC2 algorithm.
-    case rc2
-    /// CAST algorithm.
-    case cast
     /// Elliptic curve algorithm.
     case ecsecPrimeRandom
 
@@ -496,20 +480,6 @@ public enum KeychainKeyTypeValues: String, Sendable {
         switch self {
         case .rsa:
             return kSecAttrKeyTypeRSA as String
-        case .dsa:
-            return kSecAttrKeyTypeDSA as String
-        case .aes:
-            return kSecAttrKeyTypeAES as String
-        case .des:
-            return kSecAttrKeyTypeDES as String
-        case .tripleDes:
-            return kSecAttrKeyType3DES as String
-        case .rc4:
-            return kSecAttrKeyTypeRC4 as String
-        case .rc2:
-            return kSecAttrKeyTypeRC2 as String
-        case .cast:
-            return kSecAttrKeyTypeCAST as String
         case .ecsecPrimeRandom:
             return kSecAttrKeyTypeECSECPrimeRandom as String
         }
@@ -571,34 +541,36 @@ public enum KeychainAccessibilityValues: String, Sendable {
     }
 }
 
-///Values you use with the kSecAttrPRF attribute key to indicate the item's pseudorandom function.
-public enum KeychainPseudorandomFunctionValues: String, Sendable {
-    /// Use the SHA1 algorithm.
-    case sha1
-    /// Use the SHA224 algorithm.
-    case sha224
-    /// Use the SHA256 algorithm.
-    case sha256
-    /// Use the SHA384 algorithm.
-    case sha384
-    /// Use the SHA512 algorithm.
-    case sha512
+#if os(macOS)
+    ///Values you use with the kSecAttrPRF attribute key to indicate the item's pseudorandom function.
+    public enum KeychainPseudorandomFunctionValues: String, Sendable {
+        /// Use the SHA1 algorithm.
+        case sha1
+        /// Use the SHA224 algorithm.
+        case sha224
+        /// Use the SHA256 algorithm.
+        case sha256
+        /// Use the SHA384 algorithm.
+        case sha384
+        /// Use the SHA512 algorithm.
+        case sha512
 
-    public var rawValue: String {
-        switch self {
-        case .sha1:
-            return kSecAttrPRFHmacAlgSHA1 as String
-        case .sha224:
-            return kSecAttrPRFHmacAlgSHA224 as String
-        case .sha256:
-            return kSecAttrPRFHmacAlgSHA256 as String
-        case .sha384:
-            return kSecAttrPRFHmacAlgSHA384 as String
-        case .sha512:
-            return kSecAttrPRFHmacAlgSHA512 as String
+        public var rawValue: String {
+            switch self {
+            case .sha1:
+                return kSecAttrPRFHmacAlgSHA1 as String
+            case .sha224:
+                return kSecAttrPRFHmacAlgSHA224 as String
+            case .sha256:
+                return kSecAttrPRFHmacAlgSHA256 as String
+            case .sha384:
+                return kSecAttrPRFHmacAlgSHA384 as String
+            case .sha512:
+                return kSecAttrPRFHmacAlgSHA512 as String
+            }
         }
     }
-}
+#endif
 
 /// Values you use with the kSecAttrAccessGroup attribute key.
 public enum KeychainAccessGroupValues: String, Sendable {
