@@ -145,7 +145,7 @@ public func keychainGetData(_ key: String, _ attributes: KeychainItemAttributes 
     let query = withKeychainItemAttributes([
         KeychainPasswordAttributeKeys.Account: key,
         KeychainSearchKeys.MatchLimit: KeychainMatchLimitValues.one.rawValue,
-        KeychainValueResultReturn.data.rawValue: 1,
+        KeychainValueResultReturn.data.rawValue: true,
     ])(attributes)
 
     return await keychainItemCopyMatching(query)
@@ -157,7 +157,7 @@ public func keychainGetDataAll(_ key: String, _ attributes: KeychainItemAttribut
     let query = withKeychainItemAttributes([
         KeychainPasswordAttributeKeys.Account: key,
         KeychainSearchKeys.MatchLimit: KeychainMatchLimitValues.all.rawValue,
-        KeychainValueResultReturn.data.rawValue: 1,
+        KeychainValueResultReturn.data.rawValue: true,
     ])(attributes)
 
     return await keychainItemCopyMatching(query)
