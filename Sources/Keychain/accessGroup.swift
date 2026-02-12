@@ -23,7 +23,7 @@ import Security
         )
 
         guard infoStatus == errSecSuccess else {
-            return .failure(.error(status))
+            return .failure(.error(infoStatus))
         }
 
         guard

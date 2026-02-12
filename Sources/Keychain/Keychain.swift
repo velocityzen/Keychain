@@ -146,7 +146,7 @@ public func keychainGetData(_ key: String, _ attributes: KeychainItemAttributes 
 }
 
 public func keychainGetDataAll(_ key: String, _ attributes: KeychainItemAttributes = [:]) async
-    -> Result<Data, KeychainError>
+    -> Result<[Data], KeychainError>
 {
     let query =
         attributes
@@ -156,7 +156,7 @@ public func keychainGetDataAll(_ key: String, _ attributes: KeychainItemAttribut
             KeychainValueResultReturn.data.rawValue: true,
         ])
 
-    return await keychainItemCopyMatching(query)
+    return await keychainItemCopyMatchingAll(query)
 }
 
 @discardableResult
@@ -245,6 +245,25 @@ func keychainItemCopyMatching(
             }
 
             return .fromOptional(data as? Data, error: .notFound)
+        }
+    }
+
+    return await task.value
+}
+
+func keychainItemCopyMatchingAll(
+    _ attributes: KeychainItemAttributes
+) async -> Result<[Data], KeychainError> {
+    let task = Task.detached { () -> Result<[Data], KeychainError> in
+        sharedSecItemLock.withLock {
+            var data: CFTypeRef?
+            let status = SecItemCopyMatching(attributes as CFDictionary, &data)
+
+            guard status == noErr else {
+                return .failure(KeychainError.error(status))
+            }
+
+            return .fromOptional(data as? [Data], error: .notFound)
         }
     }
 

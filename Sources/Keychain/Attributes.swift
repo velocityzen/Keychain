@@ -501,7 +501,7 @@ public enum KeychainSynchronizabilityValues: String, Sendable {
 
 /// Values you use with the kSecAttrTokenID attribute key.
 public enum KeychainTokenIdValues: String, Sendable {
-    /// A key whose value indicates whether the item synchronizes through iCloud.
+    /// Indicates that the cryptographic key is stored in the Secure Enclave.
     case secureEnclave
 
     public var rawValue: String {

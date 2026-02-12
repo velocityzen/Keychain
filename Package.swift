@@ -14,7 +14,7 @@ let package = Package(
             targets: ["Keychain"])
     ],
     dependencies: [
-        .package(url: "https://github.com/velocityzen/fp-swift.git", from: "0.2.0")
+        .package(url: "https://github.com/velocityzen/fp-swift.git", from: "1.0.0")
     ],
     targets: [
         .target(
