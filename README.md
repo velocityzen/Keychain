@@ -82,8 +82,15 @@ let token = await keychainGetData("token")
 #### Updating Values
 
 ```swift
-// Update existing value
+// Update existing value (fails if key doesn't exist)
 await keychainUpdateValue("username", "jane.doe")
+```
+
+#### Set or Update Values
+
+```swift
+// Creates the item if it doesn't exist, updates it if it does
+await keychainSetOrUpdate("username", "jane.doe")
 ```
 
 #### Deleting Values
