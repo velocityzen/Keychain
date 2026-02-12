@@ -1,3 +1,4 @@
+import FP
 import Foundation
 import Security
 
@@ -39,11 +40,10 @@ public func keychainSet(
 public func keychainSet(
     _ key: String, _ value: String, _ attributes: KeychainItemAttributes = [:]
 ) async -> Result<Void, KeychainError> {
-    guard let value = value.data(using: String.Encoding.utf8) else {
-        return .failure(.unexpectedValueData)
-    }
-
-    return await keychainSet(key, value, attributes)
+    return
+        await Result
+        .fromOptional(value.data(using: .utf8), error: .unexpectedValueData)
+        .flatMapAsync { await keychainSet(key, $0, attributes) }
 }
 
 public func keychainSet(
@@ -56,11 +56,12 @@ public func keychainSet(
     _ key: String, _ value: Data,
     _ attributes: KeychainItemAttributes = [:]
 ) async -> Result<Void, KeychainError> {
-    let query = withKeychainItemAttributes(
-        [
+    let query =
+        attributes
+        |> withKeychainItemAttributes([
             KeychainPasswordAttributeKeys.Account: key,
             KeychainValueTypeKeys.Data: value,
-        ])(attributes)
+        ])
 
     return await keychainItemAdd(query)
 }
@@ -79,11 +80,10 @@ public func keychainUpdateValue(
     _ key: String, _ value: String,
     _ attributes: KeychainItemAttributes = [:]
 ) async -> Result<Void, KeychainError> {
-    guard let value = value.data(using: String.Encoding.utf8) else {
-        return .failure(.unexpectedValueData)
-    }
-
-    return await keychainUpdateValue(key, value, attributes)
+    return
+        await Result
+        .fromOptional(value.data(using: .utf8), error: .unexpectedValueData)
+        .flatMapAsync { await keychainUpdateValue(key, $0, attributes) }
 }
 
 public func keychainUpdateValue(
@@ -97,7 +97,8 @@ public func keychainUpdateValue(
     _ key: String, _ value: Data,
     _ attributes: KeychainItemAttributes = [:]
 ) async -> Result<Void, KeychainError> {
-    let query = withKeychainItemAttributes([KeychainPasswordAttributeKeys.Account: key])(attributes)
+    let query =
+        attributes |> withKeychainItemAttributes([KeychainPasswordAttributeKeys.Account: key])
     return await keychainItemUpdate(query, [KeychainValueTypeKeys.Data: value])
 }
 
@@ -105,10 +106,7 @@ public func keychainGetString(_ key: String, _ attributes: KeychainItemAttribute
     -> Result<String, KeychainError>
 {
     return await keychainGetData(key, attributes).flatMap {
-        guard let str = String(data: $0, encoding: .utf8) else {
-            return .failure(.notString)
-        }
-        return .success(str)
+        .fromOptional(String(data: $0, encoding: .utf8), error: .notString)
     }
 }
 
@@ -116,10 +114,7 @@ public func keychainGetUUID(_ key: String, _ attributes: KeychainItemAttributes 
     -> Result<UUID, KeychainError>
 {
     return await keychainGetString(key, attributes).flatMap {
-        guard let uuid = UUID(uuidString: $0) else {
-            return .failure(.notUUID)
-        }
-        return .success(uuid)
+        .fromOptional(UUID(uuidString: $0), error: .notUUID)
     }
 }
 
@@ -127,26 +122,25 @@ public func keychainGetBool(_ key: String, _ attributes: KeychainItemAttributes 
     -> Result<Bool, KeychainError>
 {
     return await keychainGetData(key, attributes).flatMap { (data: Data) in
-        if let firstByte = data.first {
-            if firstByte == 0 {
-                return .success(false)
-            } else if firstByte == 1 {
-                return .success(true)
-            }
-        }
-
-        return .failure(.notBoolean)
+        .fromOptional(
+            data.first.flatMap {
+                $0 == 0 ? false : $0 == 1 ? true : nil
+            },
+            error: .notBoolean
+        )
     }
 }
 
 public func keychainGetData(_ key: String, _ attributes: KeychainItemAttributes = [:]) async
     -> Result<Data, KeychainError>
 {
-    let query = withKeychainItemAttributes([
-        KeychainPasswordAttributeKeys.Account: key,
-        KeychainSearchKeys.MatchLimit: KeychainMatchLimitValues.one.rawValue,
-        KeychainValueResultReturn.data.rawValue: true,
-    ])(attributes)
+    let query =
+        attributes
+        |> withKeychainItemAttributes([
+            KeychainPasswordAttributeKeys.Account: key,
+            KeychainSearchKeys.MatchLimit: KeychainMatchLimitValues.one.rawValue,
+            KeychainValueResultReturn.data.rawValue: true,
+        ])
 
     return await keychainItemCopyMatching(query)
 }
@@ -154,11 +148,13 @@ public func keychainGetData(_ key: String, _ attributes: KeychainItemAttributes 
 public func keychainGetDataAll(_ key: String, _ attributes: KeychainItemAttributes = [:]) async
     -> Result<Data, KeychainError>
 {
-    let query = withKeychainItemAttributes([
-        KeychainPasswordAttributeKeys.Account: key,
-        KeychainSearchKeys.MatchLimit: KeychainMatchLimitValues.all.rawValue,
-        KeychainValueResultReturn.data.rawValue: true,
-    ])(attributes)
+    let query =
+        attributes
+        |> withKeychainItemAttributes([
+            KeychainPasswordAttributeKeys.Account: key,
+            KeychainSearchKeys.MatchLimit: KeychainMatchLimitValues.all.rawValue,
+            KeychainValueResultReturn.data.rawValue: true,
+        ])
 
     return await keychainItemCopyMatching(query)
 }
@@ -167,7 +163,8 @@ public func keychainGetDataAll(_ key: String, _ attributes: KeychainItemAttribut
 public func keychainDelete(_ key: String, _ attributes: KeychainItemAttributes = [:]) async
     -> Result<Void, KeychainError>
 {
-    let query = withKeychainItemAttributes([KeychainPasswordAttributeKeys.Account: key])(attributes)
+    let query =
+        attributes |> withKeychainItemAttributes([KeychainPasswordAttributeKeys.Account: key])
     return await keychainItemDelete(query)
 }
 
@@ -243,15 +240,11 @@ func keychainItemCopyMatching(
             var data: CFTypeRef?
             let status = SecItemCopyMatching(attributes as CFDictionary, &data)
 
-            if status == noErr {
-                guard let data = data as? Data else {
-                    return .failure(KeychainError.notFound)
-                }
-
-                return .success(data)
+            guard status == noErr else {
+                return .failure(KeychainError.error(status))
             }
 
-            return .failure(KeychainError.error(status))
+            return .fromOptional(data as? Data, error: .notFound)
         }
     }
 

@@ -1,3 +1,4 @@
+import FP
 import Foundation
 import Security
 
@@ -46,20 +47,14 @@ import Security
         > {
             guard let currentAccessGroup else {
                 return getKeychainAccessGroups()
-                    .flatMap { groups -> Result<String, KeychainError> in
-                        guard let accessGroup = groups.first else {
-                            return .failure(.noAccessGroups)
-                        }
-
-                        return .success(accessGroup)
-                    }
+                    .flatMap { .fromOptional($0.first, error: .noAccessGroups) }
                     .map { accessGroup -> KeychainItemAttributes in
                         currentAccessGroup = accessGroup
-                        return withAccessGroup(accessGroup)(attributes)
+                        return attributes |> withAccessGroup(accessGroup)
                     }
             }
 
-            return .success(withAccessGroup(currentAccessGroup)(attributes))
+            return .success(attributes |> withAccessGroup(currentAccessGroup))
         }
 
         return with

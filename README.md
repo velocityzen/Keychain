@@ -14,10 +14,10 @@ A modern, type-safe Swift wrapper for iOS, macOS, tvOS, and watchOS Keychain Ser
 ## Requirements
 
 - Swift 6.2+
-- macOS 12.0+
-- iOS 15.0+
-- tvOS 15.0+
-- watchOS 8.0+
+- macOS 15.0+
+- iOS 17.0+
+- tvOS 17.0+
+- watchOS 10.0+
 
 ## Installation
 
@@ -101,24 +101,21 @@ The package supports all Keychain attributes through a composable builder patter
 await keychainSet(
     "password",
     "secret123",
-    withAccessibility(.whenUnlockedThisDeviceOnly)([:])
+    [:] |> withAccessibility(.whenUnlockedThisDeviceOnly)
 )
 
 // Use access groups (for app groups)
 await keychainSet(
     "sharedToken",
     tokenData,
-    withAccessGroup("group.com.example.app")([:])
+    [:] |> withAccessGroup("group.com.example.app")
 )
 
-// Combine multiple attributes
-let attributes = withAccessibility(.afterFirstUnlock)
-let attributesWithGroup = withAccessGroup("group.com.example.app")
-
+// Combine multiple attributes using the pipe operator
 await keychainSet(
     "key",
     "value",
-    attributesWithGroup(attributes([:]))
+    [:] |> withAccessibility(.afterFirstUnlock) |> withAccessGroup("group.com.example.app")
 )
 ```
 
@@ -193,7 +190,7 @@ Share keychain items between apps:
 
 ```swift
 // In both apps, use the same access group
-let attributes = withAccessGroup("group.com.example.shared")([:])
+let attributes = [:] |> withAccessGroup("group.com.example.shared")
 
 await keychainSet("sharedKey", "sharedValue", attributes)
 ```

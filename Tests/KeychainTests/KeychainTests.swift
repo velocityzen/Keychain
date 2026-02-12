@@ -1,3 +1,4 @@
+import FP
 import Foundation
 import Testing
 
@@ -38,12 +39,7 @@ func setAndGetString(args: TestType) async throws {
             await keychainSet(testKey, value, setAttributes)
         }
 
-    switch setResult {
-    case .success:
-        break
-    case .failure(let error):
-        throw error
-    }
+    try setResult.get()
 
     let getAttributes = [:] |> withClass(.genericPassword)
 
@@ -69,24 +65,20 @@ func expect<A: Equatable, B: Equatable>(
     _ expectedError: KeychainError?
 ) throws {
     if let expectedError {
-        switch result {
-        case .success(let value):
-            #expect(
-                Bool(false),
-                "Expected error \(expectedError), but got success with value \(value)")
-
-        case .failure(let error):
-            #expect(error == expectedError)
-        }
+        result.match(
+            { value in
+                #expect(
+                    Bool(false),
+                    "Expected error \(expectedError), but got success with value \(value)")
+            },
+            { error in #expect(error == expectedError) }
+        )
 
         return
     }
 
-    switch result {
-    case .success(let value):
-        #expect(value as? B == expectedValue)
-
-    case .failure(let error):
-        throw error
-    }
+    result.match(
+        { value in #expect(value as? B == expectedValue) },
+        { error in Issue.record("Unexpected error: \(error)") }
+    )
 }
