@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
     name: "Keychain",
     platforms: [
-        .macOS(.v14), .iOS(.v17), .tvOS(.v17), .watchOS(.v10),
+        .macOS(.v15), .iOS(.v18),
     ],
     products: [
         .library(
@@ -14,7 +14,7 @@ let package = Package(
             targets: ["Keychain"])
     ],
     dependencies: [
-        .package(url: "https://github.com/velocityzen/fp-swift.git", from: "1.1.1")
+        .package(url: "https://github.com/velocityzen/fp-swift.git", from: "2.0.0")
     ],
     targets: [
         .target(
