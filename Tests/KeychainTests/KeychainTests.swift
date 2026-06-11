@@ -123,17 +123,17 @@ func deleteValue() async throws {
     try await keychainSet(testKey, "value", defaultAttributes).get()
 
     let deleteResult = await keychainDelete(testKey, defaultAttributes)
-    #expect(deleteResult.toBool)
+    #expect(deleteResult.isSuccess)
 
     let getResult = await keychainGetString(testKey, defaultAttributes)
-    #expect(!getResult.toBool)
+    #expect(getResult.isFailure)
 }
 
 @Test("delete non-existent key succeeds")
 func deleteNonExistent() async throws {
     let testKey = "test-" + UUID().uuidString
     let result = await keychainDelete(testKey, defaultAttributes)
-    #expect(result.toBool)
+    #expect(result.isSuccess)
 }
 
 @Test("get non-existent key returns error")
