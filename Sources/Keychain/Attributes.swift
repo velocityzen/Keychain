@@ -1,6 +1,6 @@
 import Security
 
-public struct KeychainItemAttributeKeys: Sendable {
+public enum KeychainItemAttributeKeys {
     /// An item class key used to construct a Keychain search dictionary.
     public static let Class = kSecClass as String
     /// A key with a value that's an access control instance indicating access control settings for the item.
@@ -9,7 +9,8 @@ public struct KeychainItemAttributeKeys: Sendable {
     public static let Accessible = kSecAttrAccessible as String
     /// A key with a value that's a string indicating the access group the item is in.
     public static let AccessGroup = kSecAttrAccessGroup as String
-    /// A key with a value that's a string indicating whether the item synchronizes through iCloud.
+    /// A key with a value that's a Boolean indicating whether the item synchronizes through iCloud.
+    /// In a search, use `KeychainSynchronizabilityValues.synchronizableAny` to match both.
     public static let Synchronizable = kSecAttrSynchronizable as String
     /// A key with a value that indicates the item's creation date.
     public static let CreationDate = kSecAttrCreationDate as String
@@ -31,7 +32,8 @@ public struct KeychainItemAttributeKeys: Sendable {
     public static let IsNegative = kSecAttrIsNegative as String
     /// A key with a value that's a string that provides a sync view hint.
     public static let SyncViewHint = kSecAttrSyncViewHint as String
-    /// Persistant Reference
+    /// Persistent Reference
+    @available(*, deprecated, renamed: "PersistentReference")
     public static let PersistantReference = kSecAttrPersistantReference as String
     /// Persistent Reference
     public static let PersistentReference = kSecAttrPersistentReference as String
@@ -43,13 +45,12 @@ public struct KeychainItemAttributeKeys: Sendable {
 
     #if os(tvOS)
         /// A key with a value that indicates whether to store the data in a keychain available to anyone who uses the device.
-        @available(tvOS 16.0, *)
         public static let UseUserIndependentKeychain = kSecUseUserIndependentKeychain as String
     #endif
 }
 
 /// values you use with the kSecClass key.
-public enum KeychainClassValues: String, Sendable {
+public enum KeychainClassValues: KeychainConstant {
     ///The value that indicates a generic password item.
     case genericPassword
     ///The value that indicates an Internet password item.
@@ -78,7 +79,7 @@ public enum KeychainClassValues: String, Sendable {
 }
 
 /// Item search matching keys
-public struct KeychainSearchKeys: Sendable {
+public enum KeychainSearchKeys {
     /// A key whose value indicates a policy with which a matching certificate or identity must verify.
     public static let MatchPolicy = kSecMatchPolicy as String
     /// A key whose value indicates a list of items to search.
@@ -123,7 +124,7 @@ public struct KeychainSearchKeys: Sendable {
 }
 
 /// Keys used to limit the number of results returned.
-public enum KeychainMatchLimitValues: String, Sendable {
+public enum KeychainMatchLimitValues: KeychainConstant {
     /// A key whose value indicates the match limit.
     case one
     /// A key whose value indicates the match limit.
@@ -140,7 +141,7 @@ public enum KeychainMatchLimitValues: String, Sendable {
 }
 
 /// Values you use to indicate whether to allow UI authentication.
-public enum KeychainUIAuthenticationValues: String, Sendable {
+public enum KeychainUIAuthenticationValues: KeychainConstant {
     /// A key whose value is a Boolean indicating whether to allow UI authentication.
     case skip
 
@@ -153,7 +154,7 @@ public enum KeychainUIAuthenticationValues: String, Sendable {
 }
 
 /// Keys you use to specify the type of results to return from a keychain item search or add operation.
-public enum KeychainValueResultReturn: String, Sendable {
+public enum KeychainValueResultReturn: KeychainConstant {
     /// A key whose value is a Boolean indicating whether to return item data.
     case data
     /// A key whose value is a Boolean indicating whether to return item attributes.
@@ -178,7 +179,7 @@ public enum KeychainValueResultReturn: String, Sendable {
 }
 
 /// Keys that appear in the result dictionary when you specify more than one search result key.
-public struct KeychainValueTypeKeys: Sendable {
+public enum KeychainValueTypeKeys {
     ///A key whose value is the item’s data.
     public static let Data = kSecValueData as String
     /// A key whose value is a reference to the item.
@@ -187,7 +188,7 @@ public struct KeychainValueTypeKeys: Sendable {
     public static let PersistentRef = kSecValuePersistentRef as String
 }
 
-public struct KeychainPasswordAttributeKeys: Sendable {
+public enum KeychainPasswordAttributeKeys {
     /// A key whose value is a string indicating the item’s account name.
     public static let Account = kSecAttrAccount as String
     /// A key whose value is a string indicating the item’s service.
@@ -208,7 +209,7 @@ public struct KeychainPasswordAttributeKeys: Sendable {
     public static let Path = kSecAttrPath as String
 }
 
-public struct KeychainCertificateAttributeKeys: Sendable {
+public enum KeychainCertificateAttributeKeys {
     /// A key whose value indicates the item’s subject name.
     public static let Subject = kSecAttrSubject as String
     /// A key whose value indicates the item’s issuer.
@@ -225,7 +226,7 @@ public struct KeychainCertificateAttributeKeys: Sendable {
     public static let CertificateEncoding = kSecAttrCertificateEncoding as String
 }
 
-public struct KeychainCryptographicKeyAttributeKeys: Sendable {
+public enum KeychainCryptographicKeyAttributeKeys {
     /// A key whose value indicates the item’s cryptographic key class.
     public static let KeyClass = kSecAttrKeyClass as String
     /// A key whose value indicates the item’s application label.
@@ -251,7 +252,7 @@ public struct KeychainCryptographicKeyAttributeKeys: Sendable {
     #endif
 }
 
-public struct KeychainCryptographicKeyUsageAttributeKeys: Sendable {
+public enum KeychainCryptographicKeyUsageAttributeKeys {
     /// A key whose value indicates the item’s permanence.
     public static let IsPermanent = kSecAttrIsPermanent as String
     /// A key whose value indicates the item’s sensitivity.
@@ -275,7 +276,7 @@ public struct KeychainCryptographicKeyUsageAttributeKeys: Sendable {
 }
 
 /// Values you use with the kSecAttrProtocol attribute key.
-public enum KeychainProtocolValues: String, Sendable {
+public enum KeychainProtocolValues: KeychainConstant {
     /// FTP protocol.
     case ftp
     /// A client side FTP account.
@@ -408,7 +409,7 @@ public enum KeychainProtocolValues: String, Sendable {
 }
 
 /// Values you use with the kSecAttrAuthenticationType attribute key.
-public enum KeychainAuthenticationTypeValues: String, Sendable {
+public enum KeychainAuthenticationTypeValues: KeychainConstant {
     /// Windows NT LAN Manager authentication.
     case ntlm
     /// Microsoft Network default authentication.
@@ -449,7 +450,7 @@ public enum KeychainAuthenticationTypeValues: String, Sendable {
 }
 
 /// Values you use with the kSecAttrKeyClass attribute key.
-public enum KeychainKeyClassValues: String, Sendable {
+public enum KeychainKeyClassValues: KeychainConstant {
     /// A public key of a public-private pair.
     case `public`
     /// A private key of a public-private pair.
@@ -470,7 +471,7 @@ public enum KeychainKeyClassValues: String, Sendable {
 }
 
 /// Values you use with the kSecAttrKeyType attribute key.
-public enum KeychainKeyTypeValues: String, Sendable {
+public enum KeychainKeyTypeValues: KeychainConstant {
     /// RSA algorithm.
     case rsa
     /// Elliptic curve algorithm.
@@ -487,7 +488,7 @@ public enum KeychainKeyTypeValues: String, Sendable {
 }
 
 /// Values you use with the kSecAttrSynchronizable attribute key.
-public enum KeychainSynchronizabilityValues: String, Sendable {
+public enum KeychainSynchronizabilityValues: KeychainConstant {
     /// A key whose value indicates whether the item synchronizes through iCloud.
     case synchronizableAny
 
@@ -500,7 +501,7 @@ public enum KeychainSynchronizabilityValues: String, Sendable {
 }
 
 /// Values you use with the kSecAttrTokenID attribute key.
-public enum KeychainTokenIdValues: String, Sendable {
+public enum KeychainTokenIdValues: KeychainConstant {
     /// Indicates that the cryptographic key is stored in the Secure Enclave.
     case secureEnclave
 
@@ -513,7 +514,7 @@ public enum KeychainTokenIdValues: String, Sendable {
 }
 
 /// Values you use with the kSecAttrAccessible attribute key, listed from most to least restrictive.
-public enum KeychainAccessibilityValues: String, Sendable {
+public enum KeychainAccessibilityValues: KeychainConstant {
     /// The data in the keychain can only be accessed when the device is unlocked. Only available if a passcode is set on the device.
     case whenPasscodeSetThisDeviceOnly
     /// The data in the keychain item can be accessed only while the device is unlocked by the user.
@@ -543,7 +544,7 @@ public enum KeychainAccessibilityValues: String, Sendable {
 
 #if os(macOS)
     ///Values you use with the kSecAttrPRF attribute key to indicate the item's pseudorandom function.
-    public enum KeychainPseudorandomFunctionValues: String, Sendable {
+    public enum KeychainPseudorandomFunctionValues: KeychainConstant {
         /// Use the SHA1 algorithm.
         case sha1
         /// Use the SHA224 algorithm.
@@ -573,7 +574,7 @@ public enum KeychainAccessibilityValues: String, Sendable {
 #endif
 
 /// Values you use with the kSecAttrAccessGroup attribute key.
-public enum KeychainAccessGroupValues: String, Sendable {
+public enum KeychainAccessGroupValues: KeychainConstant {
     /// no description
     case token
 

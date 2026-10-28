@@ -11,13 +11,24 @@ import Security
             return .failure(.error(status))
         }
 
-        guard let code = secCode else {
+        guard let secCode else {
+            return .failure(.noSecCode)
+        }
+
+        var staticCode: SecStaticCode?
+        let staticStatus = SecCodeCopyStaticCode(secCode, [], &staticCode)
+
+        guard staticStatus == errSecSuccess else {
+            return .failure(.error(staticStatus))
+        }
+
+        guard let staticCode else {
             return .failure(.noSecCode)
         }
 
         var secInfo: CFDictionary?
         let infoStatus = SecCodeCopySigningInformation(
-            code as! SecStaticCode,
+            staticCode,
             SecCSFlags(rawValue: kSecCSSigningInformation),
             &secInfo
         )
@@ -37,26 +48,17 @@ import Security
         return .success(groups)
     }
 
+    /// Adds the first access group from the running app's entitlements.
     public func withCurrentAccessGroup() -> (_ attributes: KeychainItemAttributes) -> Result<
         KeychainItemAttributes, KeychainError
     > {
-        var currentAccessGroup: String?
-
-        func with(_ attributes: KeychainItemAttributes) -> Result<
-            KeychainItemAttributes, KeychainError
-        > {
-            guard let currentAccessGroup else {
-                return getKeychainAccessGroups()
-                    .flatMap { .fromOptional($0.first, error: .noAccessGroups) }
-                    .map { accessGroup -> KeychainItemAttributes in
-                        currentAccessGroup = accessGroup
-                        return attributes |> withAccessGroup(accessGroup)
-                    }
-            }
-
-            return .success(attributes |> withAccessGroup(currentAccessGroup))
+        return { attributes in
+            currentAccessGroup.map { attributes |> withAccessGroup($0) }
         }
-
-        return with
     }
+
+    /// Entitlements don't change while the app runs, so they're read once, on first use.
+    private let currentAccessGroup: Result<String, KeychainError> =
+        getKeychainAccessGroups()
+        .flatMap { .fromOptional($0.first, error: .noAccessGroups) }
 #endif

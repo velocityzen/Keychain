@@ -2,272 +2,153 @@ import FP
 import Foundation
 import Security
 
-public typealias KeychainItemAttributes = [String: Sendable]
-public typealias KeychainItemAttributesBuilder = (_ attributes: KeychainItemAttributes?) ->
-    KeychainItemAttributes
-
-public func withAccessibility(_ accessible: KeychainAccessibilityValues)
-    -> KeychainItemAttributesBuilder
-{
-    return withKeychainItemAttributes([KeychainItemAttributeKeys.Accessible: accessible.rawValue])
-}
-
-public func withAccessGroup(_ group: String) -> KeychainItemAttributesBuilder {
-    return withKeychainItemAttributes([KeychainItemAttributeKeys.AccessGroup: group])
-}
-
-public func withClass(_ itemClass: KeychainClassValues) -> KeychainItemAttributesBuilder {
-    return withKeychainItemAttributes([KeychainItemAttributeKeys.Class: itemClass.rawValue])
-}
-
-public func withKeychainItemAttributes(
-    _ add: KeychainItemAttributes,
-) -> KeychainItemAttributesBuilder {
-    return { (_ attributes: KeychainItemAttributes?) in
-        (attributes ?? [:]).merging(add) { attr, add in add }
-    }
-}
-
-public func keychainSet(
-    _ key: String, _ value: Bool, _ attributes: KeychainItemAttributes = [:]
-) async -> Result<Void, KeychainError> {
-    let bytes: [UInt8] = value ? [1] : [0]
-    let data = Data(bytes)
-
-    return await keychainSet(key, data, attributes)
-}
-
-public func keychainSet(
-    _ key: String, _ value: String, _ attributes: KeychainItemAttributes = [:]
-) async -> Result<Void, KeychainError> {
-    return
-        await Result
-        .fromOptional(value.data(using: .utf8), error: .unexpectedValueData)
-        .flatMapAsync { await keychainSet(key, $0, attributes) }
-}
-
-public func keychainSet(
-    _ key: String, _ value: UUID, _ attributes: KeychainItemAttributes = [:]
-) async -> Result<Void, KeychainError> {
-    return await keychainSet(key, value.uuidString, attributes)
-}
-
-public func keychainSet(
-    _ key: String, _ value: Data,
-    _ attributes: KeychainItemAttributes = [:]
+/// Stores a new item under `key`.
+///
+/// Items are generic passwords unless `attributes` names another class.
+/// Fails with ``KeychainError/duplicateItem`` if the item already exists.
+public func keychainSet<Value: KeychainValue>(
+    _ key: String, _ value: Value, _ attributes: KeychainItemAttributes = [:]
 ) async -> Result<Void, KeychainError> {
     let query =
-        attributes
-        |> withKeychainItemAttributes([
-            KeychainPasswordAttributeKeys.Account: key,
-            KeychainValueTypeKeys.Data: value,
-        ])
+        itemQuery(key, attributes)
+        |> withKeychainItemAttributes([KeychainValueTypeKeys.Data: value.keychainData])
 
     return await keychainItemAdd(query)
 }
 
-public func keychainUpdateValue(
-    _ key: String, _ value: Bool,
-    _ attributes: KeychainItemAttributes = [:]
+/// Replaces the value of an existing item.
+///
+/// Attributes that identify the item (class, service, access group and so on)
+/// find it. Attributes that only describe it, such as accessibility, label or
+/// comment, are applied to it along with the new value.
+/// Fails with ``KeychainError/notFound`` if the item doesn't exist.
+public func keychainUpdateValue<Value: KeychainValue>(
+    _ key: String, _ value: Value, _ attributes: KeychainItemAttributes = [:]
 ) async -> Result<Void, KeychainError> {
-    let bytes: [UInt8] = value ? [1] : [0]
-    let value = Data(bytes)
+    let (query, changes) = updateQuery(key, attributes)
+
+    return await keychainItemUpdate(
+        query,
+        changes |> withKeychainItemAttributes([KeychainValueTypeKeys.Data: value.keychainData])
+    )
+}
+
+/// Stores the item, or updates it with ``keychainUpdateValue(_:_:_:)`` if it
+/// already exists.
+public func keychainSetOrUpdate<Value: KeychainValue>(
+    _ key: String, _ value: Value, _ attributes: KeychainItemAttributes = [:]
+) async -> Result<Void, KeychainError> {
+    let result = await keychainSet(key, value, attributes)
+
+    guard case .failure(.duplicateItem) = result else {
+        return result
+    }
 
     return await keychainUpdateValue(key, value, attributes)
 }
 
-public func keychainUpdateValue(
-    _ key: String, _ value: String,
+/// Reads the item under `key` and decodes it as `Value`.
+///
+/// Fails with ``KeychainError/notFound`` if the item doesn't exist.
+public func keychainGet<Value: KeychainValue>(
+    _ key: String, as type: Value.Type = Value.self,
     _ attributes: KeychainItemAttributes = [:]
-) async -> Result<Void, KeychainError> {
-    return
-        await Result
-        .fromOptional(value.data(using: .utf8), error: .unexpectedValueData)
-        .flatMapAsync { await keychainUpdateValue(key, $0, attributes) }
-}
-
-public func keychainUpdateValue(
-    _ key: String, _ value: UUID,
-    _ attributes: KeychainItemAttributes = [:]
-) async -> Result<Void, KeychainError> {
-    return await keychainUpdateValue(key, value.uuidString, attributes)
-}
-
-public func keychainUpdateValue(
-    _ key: String, _ value: Data,
-    _ attributes: KeychainItemAttributes = [:]
-) async -> Result<Void, KeychainError> {
+) async -> Result<Value, KeychainError> {
     let query =
-        attributes |> withKeychainItemAttributes([KeychainPasswordAttributeKeys.Account: key])
-    return await keychainItemUpdate(query, [KeychainValueTypeKeys.Data: value])
+        itemQuery(key, attributes)
+        |> withKeychainItemAttributes([
+            KeychainSearchKeys.MatchLimit: KeychainMatchLimitValues.one.rawValue,
+            KeychainValueResultReturn.data.rawValue: true,
+        ])
+
+    return await keychainItemCopyMatching(query, as: Data.self).flatMap(Value.fromKeychainData)
 }
 
 public func keychainGetString(_ key: String, _ attributes: KeychainItemAttributes = [:]) async
     -> Result<String, KeychainError>
 {
-    return await keychainGetData(key, attributes).flatMap {
-        .fromOptional(String(data: $0, encoding: .utf8), error: .notString)
-    }
+    return await keychainGet(key, as: String.self, attributes)
 }
 
 public func keychainGetUUID(_ key: String, _ attributes: KeychainItemAttributes = [:]) async
     -> Result<UUID, KeychainError>
 {
-    return await keychainGetString(key, attributes).flatMap {
-        .fromOptional(UUID(uuidString: $0), error: .notUUID)
-    }
+    return await keychainGet(key, as: UUID.self, attributes)
 }
 
 public func keychainGetBool(_ key: String, _ attributes: KeychainItemAttributes = [:]) async
     -> Result<Bool, KeychainError>
 {
-    return await keychainGetData(key, attributes).flatMap { (data: Data) in
-        .fromOptional(
-            data.first.flatMap {
-                $0 == 0 ? false : $0 == 1 ? true : nil
-            },
-            error: .notBoolean
-        )
-    }
+    return await keychainGet(key, as: Bool.self, attributes)
 }
 
 public func keychainGetData(_ key: String, _ attributes: KeychainItemAttributes = [:]) async
     -> Result<Data, KeychainError>
 {
-    let query =
-        attributes
-        |> withKeychainItemAttributes([
-            KeychainPasswordAttributeKeys.Account: key,
-            KeychainSearchKeys.MatchLimit: KeychainMatchLimitValues.one.rawValue,
-            KeychainValueResultReturn.data.rawValue: true,
-        ])
-
-    return await keychainItemCopyMatching(query)
+    return await keychainGet(key, as: Data.self, attributes)
 }
 
+/// Reads the data of every item stored under `key`, for example the same key
+/// in several services or access groups.
 public func keychainGetDataAll(_ key: String, _ attributes: KeychainItemAttributes = [:]) async
     -> Result<[Data], KeychainError>
 {
-    let query =
-        attributes
-        |> withKeychainItemAttributes([
-            KeychainPasswordAttributeKeys.Account: key,
-            KeychainSearchKeys.MatchLimit: KeychainMatchLimitValues.all.rawValue,
-            KeychainValueResultReturn.data.rawValue: true,
-        ])
-
-    return await keychainItemCopyMatchingAll(query)
+    return await keychainItemCopyAllData(itemQuery(key, attributes))
 }
 
+/// Deletes every item that matches `key` and `attributes`.
+///
+/// Deleting an item that doesn't exist succeeds. Pass a service (see
+/// ``withService(_:)``) to avoid deleting items with the same key that other
+/// code stored under a different service.
 @discardableResult
 public func keychainDelete(_ key: String, _ attributes: KeychainItemAttributes = [:]) async
     -> Result<Void, KeychainError>
 {
-    let query =
-        attributes |> withKeychainItemAttributes([KeychainPasswordAttributeKeys.Account: key])
-    return await keychainItemDelete(query)
+    return await keychainItemDelete(itemQuery(key, attributes))
 }
 
-func keychainItemAdd(
-    _ attributes: KeychainItemAttributes
-) async -> Result<Void, KeychainError> {
-    let task = Task.detached { () -> Result<Void, KeychainError> in
-        sharedSecItemLock.withLock {
-            let status = SecItemAdd(attributes as CFDictionary, nil)
-
-            switch status {
-            case noErr:
-                return .success(())
-
-            case errSecDuplicateItem:
-                return .failure(KeychainError.duplicateItem)
-
-            default:
-                return .failure(KeychainError.error(status))
-            }
-        }
-    }
-
-    return await task.value
+/// The query for one item: a generic password unless the attributes name
+/// another class, then the caller's attributes, then the key as the account.
+func itemQuery(_ key: String, _ attributes: KeychainItemAttributes) -> KeychainItemAttributes {
+    return [KeychainItemAttributeKeys.Class: KeychainClassValues.genericPassword.rawValue]
+        |> withKeychainItemAttributes(attributes)
+        |> withKeychainItemAttributes([KeychainPasswordAttributeKeys.Account: key])
 }
 
-func keychainItemUpdate(
-    _ query: KeychainItemAttributes,
-    _ update: KeychainItemAttributes
-) async -> Result<Void, KeychainError> {
-    let task = Task.detached { () -> Result<Void, KeychainError> in
-        sharedSecItemLock.withLock {
-            let status = SecItemUpdate(query as CFDictionary, update as CFDictionary)
+/// Splits an item query into the attributes that find the item and the
+/// descriptive attributes to change on it.
+func updateQuery(_ key: String, _ attributes: KeychainItemAttributes) -> (
+    query: KeychainItemAttributes, changes: KeychainItemAttributes
+) {
+    let query = itemQuery(key, attributes)
 
-            switch status {
-            case noErr:
-                return .success(())
-
-            case errSecItemNotFound:
-                return .failure(KeychainError.notFound)
-
-            default:
-                return .failure(KeychainError.error(status))
-            }
-        }
-    }
-
-    return await task.value
+    return (
+        query.filter { !descriptiveAttributeKeys.contains($0.key) },
+        query.filter { descriptiveAttributeKeys.contains($0.key) }
+    )
 }
 
-func keychainItemDelete(
-    _ attributes: KeychainItemAttributes
-) async -> Result<Void, KeychainError> {
-    let task = Task.detached { () -> Result<Void, KeychainError> in
-        sharedSecItemLock.withLock {
-            let status = SecItemDelete(attributes as CFDictionary)
-            if status == noErr || status == errSecItemNotFound {
-                return .success(())
-            }
+/// Attributes that describe an item rather than identify it. An update sets
+/// them instead of searching by them, so updating with a new label or
+/// accessibility still finds the existing item.
+private let descriptiveAttributeKeys: Set<String> = {
+    var keys: Set<String> = [
+        KeychainItemAttributeKeys.Accessible,
+        KeychainItemAttributeKeys.AccessControl,
+        KeychainItemAttributeKeys.Label,
+        KeychainItemAttributeKeys.Description,
+        KeychainItemAttributeKeys.Comment,
+        KeychainItemAttributeKeys.Creator,
+        KeychainItemAttributeKeys.ItemType,
+        KeychainItemAttributeKeys.IsInvisible,
+        KeychainItemAttributeKeys.IsNegative,
+        KeychainPasswordAttributeKeys.Generic,
+    ]
 
-            return .failure(KeychainError.error(status))
-        }
-    }
+    #if os(macOS)
+        keys.insert(KeychainItemAttributeKeys.Access)
+    #endif
 
-    return await task.value
-}
-
-func keychainItemCopyMatching(
-    _ attributes: KeychainItemAttributes
-) async -> Result<Data, KeychainError> {
-    let task = Task.detached { () -> Result<Data, KeychainError> in
-        sharedSecItemLock.withLock {
-            var data: CFTypeRef?
-            let status = SecItemCopyMatching(attributes as CFDictionary, &data)
-
-            guard status == noErr else {
-                return .failure(KeychainError.error(status))
-            }
-
-            return .fromOptional(data as? Data, error: .notFound)
-        }
-    }
-
-    return await task.value
-}
-
-func keychainItemCopyMatchingAll(
-    _ attributes: KeychainItemAttributes
-) async -> Result<[Data], KeychainError> {
-    let task = Task.detached { () -> Result<[Data], KeychainError> in
-        sharedSecItemLock.withLock {
-            var data: CFTypeRef?
-            let status = SecItemCopyMatching(attributes as CFDictionary, &data)
-
-            guard status == noErr else {
-                return .failure(KeychainError.error(status))
-            }
-
-            return .fromOptional(data as? [Data], error: .notFound)
-        }
-    }
-
-    return await task.value
-}
-
-private let sharedSecItemLock = NSLock()
+    return keys
+}()

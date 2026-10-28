@@ -1,23 +1,22 @@
 # Keychain
 
-A modern, type-safe Swift wrapper for iOS, macOS, tvOS, and watchOS Keychain Services.
+A modern, type-safe Swift wrapper for Keychain Services on macOS, iOS, tvOS, watchOS, and visionOS.
 
 ## Features
 
-- Async/await API with Result types
-- Type-safe value storage (String, Bool, UUID, Data)
-- Thread-safe operations
-- Comprehensive attribute support
-- Platform-specific functionality
-- Swift 6 compatible with full Sendable support
+- Async/await API with typed `Result` errors
+- Type-safe values: `String`, `Bool`, `UUID`, `Data`, or your own types via `KeychainValue`
+- Composable attribute builders: `[:] |> withService(...) |> withAccessibility(...)`
+- Safe to call from any task or actor
 
 ## Requirements
 
-- Swift 6.2+
-- macOS 15.0+
-- iOS 17.0+
-- tvOS 17.0+
-- watchOS 10.0+
+- Swift 6.3+
+- macOS 26.0+
+- iOS 26.0+
+- tvOS 26.0+
+- watchOS 26.0+
+- visionOS 26.0+
 
 ## Installation
 
@@ -27,7 +26,7 @@ Add the following to your `Package.swift` file:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/velocityzen/Keychain.git", from: "1.0.0")
+    .package(url: "https://github.com/velocityzen/Keychain.git", from: "3.0.0")
 ]
 ```
 
@@ -37,93 +36,121 @@ Or add it via Xcode: File > Add Package Dependencies...
 
 ### Basic Operations
 
+Every operation returns a `Result<Value, KeychainError>`. Handle it like any other `Result`: with `switch`, `if case`, or [fp-swift](https://github.com/velocityzen/fp-swift) helpers such as `match`, `flatMapAsync` and `withAll`. Write functions aren't `@discardableResult`, so the compiler warns when you ignore one: a failed write means the value wasn't stored.
+
+Items are generic passwords unless you pass another class, and the key is the item's account. Without a service, an item is identified by its key alone, so scope your items with `withService` (see [Using Attributes](#using-attributes)) for anything beyond a quick prototype.
+
 #### Storing Values
 
 ```swift
+import FP
 import Keychain
 
-// Store a string
-let result = await keychainSet("username", "john.doe")
+switch await keychainSet("username", "john.doe") {
+case .success:
+    print("Username stored")
+case .failure(.duplicateItem):
+    print("Username already stored; use keychainSetOrUpdate to replace it")
+case .failure(let error):
+    print("Couldn't store username: \(error)")
+}
+```
 
-// Store a boolean
-await keychainSet("isEnabled", true)
+Booleans, UUIDs, raw data and your own `KeychainValue` types work the same way. Chain writes with `flatMapAsync`; the first failure skips the rest:
 
-// Store a UUID
-let id = UUID()
-await keychainSet("userId", id)
-
-// Store raw data
-let data = Data([0x01, 0x02, 0x03])
-await keychainSet("token", data)
+```swift
+func storeDefaults() async -> Result<Void, KeychainError> {
+    await keychainSet("isEnabled", true)
+        .flatMapAsync { await keychainSet("userId", UUID()) }
+        .flatMapAsync { await keychainSet("token", Data([0x01, 0x02, 0x03])) }
+}
 ```
 
 #### Retrieving Values
 
 ```swift
-// Get a string
-let username = await keychainGetString("username")
-switch username {
-case .success(let value):
-    print("Username: \(value)")
+// Get any KeychainValue type
+switch await keychainGet("username", as: String.self) {
+case .success(let username):
+    print("Username: \(username)")
+case .failure(.notFound):
+    print("No username stored")
 case .failure(let error):
-    print("Error: \(error)")
+    print("Couldn't read username: \(error)")
 }
 
-// Get a boolean
-let isEnabled = await keychainGetBool("isEnabled")
+// Or use the typed shortcuts. withAll runs the reads concurrently and
+// returns the first failure, so the caller handles one Result
+struct Defaults {
+    let isEnabled: Bool
+    let userId: UUID
+    let token: Data
+}
 
-// Get a UUID
-let userId = await keychainGetUUID("userId")
-
-// Get raw data
-let token = await keychainGetData("token")
+func loadDefaults() async -> Result<Defaults, KeychainError> {
+    await withAll(
+        await keychainGetBool("isEnabled"),
+        await keychainGetUUID("userId"),
+        await keychainGetData("token")
+    )
+    .map { isEnabled, userId, token in
+        Defaults(isEnabled: isEnabled, userId: userId, token: token)
+    }
+}
 ```
 
 #### Updating Values
 
 ```swift
-// Update existing value (fails if key doesn't exist)
-await keychainUpdateValue("username", "jane.doe")
+// Fails with .notFound if the key doesn't exist
+if case .failure(let error) = await keychainUpdateValue("username", "jane.doe") {
+    print("Couldn't update username: \(error)")
+}
 ```
+
+Attributes that identify the item (class, service, access group, synchronizable) are used to find it. Attributes that only describe it, such as accessibility, label or comment, are applied to it along with the new value.
 
 #### Set or Update Values
 
 ```swift
 // Creates the item if it doesn't exist, updates it if it does
-await keychainSetOrUpdate("username", "jane.doe")
+if case .failure(let error) = await keychainSetOrUpdate("username", "jane.doe") {
+    print("Couldn't save username: \(error)")
+}
 ```
 
 #### Deleting Values
 
 ```swift
-await keychainDelete("username")
+if case .failure(let error) = await keychainDelete("username") {
+    print("Couldn't delete username: \(error)")
+}
 ```
+
+`keychainDelete` deletes every item that matches, and succeeds when nothing matches.
 
 ### Using Attributes
 
-The package supports all Keychain attributes through a composable builder pattern:
+Attributes are built with composable builders and the `|>` operator from [fp-swift](https://github.com/velocityzen/fp-swift). Import `FP` to use the operator:
 
 ```swift
-// Set accessibility level
-await keychainSet(
-    "password",
-    "secret123",
-    [:] |> withAccessibility(.whenUnlockedThisDeviceOnly)
-)
+import FP
+import Keychain
 
-// Use access groups (for app groups)
-await keychainSet(
-    "sharedToken",
-    tokenData,
-    [:] |> withAccessGroup("group.com.example.app")
-)
+// Define your app's attributes once and pass them to every call,
+// so your keys never collide with items stored by other code
+let appKeychain = [:] |> withService("com.example.app")
 
-// Combine multiple attributes using the pipe operator
-await keychainSet(
-    "key",
-    "value",
-    [:] |> withAccessibility(.afterFirstUnlock) |> withAccessGroup("group.com.example.app")
-)
+if case .failure(let error) = await keychainSetOrUpdate("password", "secret123", appKeychain) {
+    print("Couldn't store password: \(error)")
+}
+
+// Add more attributes per call
+let tokenAttributes = appKeychain |> withAccessibility(.whenUnlockedThisDeviceOnly)
+
+if case .failure(let error) = await keychainSetOrUpdate("token", tokenData, tokenAttributes) {
+    print("Couldn't store token: \(error)")
+}
 ```
 
 ### Custom Attributes
@@ -134,10 +161,49 @@ You can add any Keychain attribute using the attribute keys:
 let attributes: KeychainItemAttributes = [
     KeychainItemAttributeKeys.Accessible: KeychainAccessibilityValues.whenUnlocked.rawValue,
     KeychainItemAttributeKeys.Synchronizable: true,
-    KeychainPasswordAttributeKeys.Service: "com.example.app"
+    KeychainPasswordAttributeKeys.Service: "com.example.app",
 ]
 
-await keychainSet("key", "value", attributes)
+if case .failure(let error) = await keychainSetOrUpdate("key", "value", attributes) {
+    print("Couldn't store key: \(error)")
+}
+```
+
+The value enums map back from Security constants too, for example `KeychainAccessibilityValues(rawValue: kSecAttrAccessibleWhenUnlocked as String)` is `.whenUnlocked`.
+
+### Custom Value Types
+
+Conform a type to `KeychainValue` to store it with the same API. Return `.unexpectedValueData` when stored data can't be decoded:
+
+```swift
+struct PIN: KeychainValue {
+    let digits: String
+
+    var keychainData: Data {
+        Data(digits.utf8)
+    }
+
+    static func fromKeychainData(_ data: Data) -> Result<PIN, KeychainError> {
+        String.fromKeychainData(data).flatMap { digits in
+            digits.count == 4 && digits.allSatisfy(\.isNumber)
+                ? .success(PIN(digits: digits))
+                : .failure(.unexpectedValueData)
+        }
+    }
+}
+
+if case .failure(let error) = await keychainSetOrUpdate("pin", PIN(digits: "1234"), appKeychain) {
+    print("Couldn't store PIN: \(error)")
+}
+
+switch await keychainGet("pin", as: PIN.self, appKeychain) {
+case .success(let pin):
+    print("PIN has \(pin.digits.count) digits")
+case .failure(.unexpectedValueData):
+    print("Stored PIN is invalid")
+case .failure(let error):
+    print("Couldn't read PIN: \(error)")
+}
 ```
 
 ## Error Handling
@@ -145,22 +211,22 @@ await keychainSet("key", "value", attributes)
 All operations return `Result<T, KeychainError>` types:
 
 ```swift
-let result = await keychainGetString("key")
-
-switch result {
+switch await keychainGetString("key") {
 case .success(let value):
     print("Value: \(value)")
-    
+
 case .failure(.notFound):
     print("Key not found")
-    
+
 case .failure(.notString):
     print("Value is not a string")
-    
+
 case .failure(let error):
     print("Error: \(error.description)")
 }
 ```
+
+`KeychainError` is a `LocalizedError`, so `error.localizedDescription` gives the same message.
 
 ### Available Errors
 
@@ -169,27 +235,31 @@ case .failure(let error):
 - `notString` - Value is not a string
 - `notUUID` - Value is not a UUID
 - `notBoolean` - Value is not a boolean
-- `unexpectedValueData` - Unexpected data format
+- `unexpectedValueData` - Item data can't be decoded (for custom `KeychainValue` types)
+- `noSecCode` - The running code's signature can't be read (macOS access groups)
+- `noAccessGroups` - The app has no `keychain-access-groups` entitlement (macOS access groups)
 - `error(OSStatus)` - System error with status code
 
 ## Advanced Usage
 
 ### Accessibility Options
 
-Control when keychain items are accessible:
+Control when keychain items are accessible. Values without `ThisDeviceOnly` let the item move to a new device through backups and device migration; iCloud Keychain sync is controlled separately by `KeychainItemAttributeKeys.Synchronizable`.
 
 ```swift
-// Most restrictive - requires passcode
+// Most restrictive - requires a device passcode, never leaves this device
 withAccessibility(.whenPasscodeSetThisDeviceOnly)
 
-// Only when device is unlocked
+// Only while the device is unlocked
 withAccessibility(.whenUnlockedThisDeviceOnly)
-withAccessibility(.whenUnlocked) // Syncs via iCloud
+withAccessibility(.whenUnlocked) // Can move to a new device via backups
 
-// After first unlock (survives reboot)
+// After first unlock (survives reboot, readable in the background)
 withAccessibility(.afterFirstUnlockThisDeviceOnly)
-withAccessibility(.afterFirstUnlock) // Syncs via iCloud
+withAccessibility(.afterFirstUnlock) // Can move to a new device via backups
 ```
+
+If you don't set one, the system default is `.whenUnlocked`.
 
 ### Access Groups (App Groups)
 
@@ -197,25 +267,50 @@ Share keychain items between apps:
 
 ```swift
 // In both apps, use the same access group
-let attributes = [:] |> withAccessGroup("group.com.example.shared")
+let shared = [:] |> withService("com.example.shared") |> withAccessGroup("group.com.example.shared")
 
-await keychainSet("sharedKey", "sharedValue", attributes)
+if case .failure(let error) = await keychainSetOrUpdate("sharedKey", "sharedValue", shared) {
+    print("Couldn't share key: \(error)")
+}
 ```
+
+On macOS, `withCurrentAccessGroup()` adds the first access group from the running app's entitlements.
 
 ### Querying Multiple Items
 
 ```swift
-// Get all matching items
-let result = await keychainGetDataAll("key")
+// Get the data of every item stored under the key, across services and access groups
+switch await keychainGetDataAll("key") {
+case .success(let items):
+    print("Found \(items.count) items")
+case .failure(.notFound):
+    print("No items stored under this key")
+case .failure(let error):
+    print("Couldn't read items: \(error)")
+}
 ```
+
+### macOS: Data Protection Keychain
+
+By default, macOS stores items in the file-based login keychain. There, accessibility values have no effect and access is controlled by per-app prompts. To get the iOS behavior, use the data protection keychain:
+
+```swift
+let appKeychain = [:] |> withService("com.example.app") |> withDataProtectionKeychain()
+```
+
+The app must be signed with a `keychain-access-groups` entitlement; otherwise calls fail with `errSecMissingEntitlement` (-34018). Items in the two keychains are separate, so items already stored in the file-based keychain aren't visible through the data protection keychain.
 
 ## Thread Safety
 
-All keychain operations are thread-safe and use internal locking mechanisms. You can safely call these functions from any async context.
+All functions are async and safe to call from any task or actor. Keychain calls always run off the caller's actor, so they never block the main actor.
+
+On macOS, the keychain API isn't thread-safe, so calls run one at a time. A caller waiting for its turn suspends instead of blocking a thread, so one call waiting on an access prompt doesn't stall the rest of the app's concurrent work. On iOS, tvOS, watchOS and visionOS, calls run concurrently.
+
+Cancelling a task doesn't cancel a keychain call that has already started; the call runs to completion.
 
 ## License
 
-MIT License - See LICENSE file for details
+MIT License - See [LICENSE](LICENSE) for details
 
 ## Contributing
 

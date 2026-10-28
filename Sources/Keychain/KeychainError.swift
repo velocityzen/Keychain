@@ -1,11 +1,13 @@
 import Foundation
+import Security
 
-public enum KeychainError: Error, Equatable, CustomStringConvertible, Codable {
+public enum KeychainError: LocalizedError, Equatable, CustomStringConvertible, Codable {
     case duplicateItem
     case notFound
     case notString
     case notUUID
     case notBoolean
+    /// The item's data can't be decoded as the requested ``KeychainValue`` type.
     case unexpectedValueData
 
     case noSecCode
@@ -25,7 +27,7 @@ public enum KeychainError: Error, Equatable, CustomStringConvertible, Codable {
         case .notBoolean:
             return "Keychain item is not a boolean"
         case .unexpectedValueData:
-            return "Unexpected value data"
+            return "Keychain item data can't be decoded as the requested type"
         case .noSecCode:
             return "No SecCode"
         case .noAccessGroups:
@@ -37,5 +39,9 @@ public enum KeychainError: Error, Equatable, CustomStringConvertible, Codable {
                 return "Unknown error"
             }
         }
+    }
+
+    public var errorDescription: String? {
+        return description
     }
 }
